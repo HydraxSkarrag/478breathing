@@ -141,9 +141,10 @@
       // dunkel -> heller (Luft strömt ein), Lautstärke schwillt an
       filter.frequency.setValueAtTime(420, now);
       filter.frequency.linearRampToValueAtTime(1150, now + dur);
-      g.gain.linearRampToValueAtTime(peak, now + dur * 0.78);
-      g.gain.setValueAtTime(peak, now + dur * 0.86);
-      g.gain.linearRampToValueAtTime(0.0001, now + dur);
+      g.gain.linearRampToValueAtTime(peak, now + dur * 0.58);
+      g.gain.setValueAtTime(peak, now + dur * 0.7);
+      // sanfter, exponentieller Ausklang in die Stille (dezente Überleitung zum Halten)
+      g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
     } else {
       // heller -> dunkler (Luft strömt aus), langes Ausklingen
       filter.frequency.setValueAtTime(1050, now);
@@ -161,24 +162,27 @@
   function playBowl() {
     if (!settings.sound || !audioCtx) return;
     var now = audioCtx.currentTime;
+    var dur = 8.5;
+    // Filter dunkelt im Ausklang ab wie eine echte Schale
     var filter = audioCtx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.value = 1700;
-    filter.Q.value = 0.5;
+    filter.Q.value = 0.4;
+    filter.frequency.setValueAtTime(2200, now);
+    filter.frequency.linearRampToValueAtTime(700, now + dur);
     filter.connect(master);
 
     var base = 174.6; // F3, tief und warm
-    var dur = 8.5;
-    var partials = [{ f: 1.0, g: 1.0 }, { f: 2.4, g: 0.22 }];
+    // harmonische Obertöne (Oktave, Duodezime) – konsonant statt metallisch
+    var partials = [{ f: 1.0, g: 1.0 }, { f: 2.0, g: 0.3 }, { f: 3.0, g: 0.1 }];
     partials.forEach(function (p) {
-      [0, 0.4].forEach(function (detune) { // sanfte Schwebung
+      [0, 0.3].forEach(function (detune) { // sanfte Schwebung
         var osc = audioCtx.createOscillator();
         var g = audioCtx.createGain();
         osc.type = "sine";
         osc.frequency.value = base * p.f + detune;
         var peak = 0.05 * p.g;
         g.gain.setValueAtTime(0.0001, now);
-        g.gain.linearRampToValueAtTime(peak, now + 0.12); // weicher Anschlag
+        g.gain.linearRampToValueAtTime(peak, now + 0.15); // weicher Anschlag
         g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
         osc.connect(g).connect(filter);
         osc.start(now);
@@ -259,11 +263,12 @@
       if (phaseIndex >= PHASES.length) {
         phaseIndex = 0;
         cycles++;
-        updateCounter();
+        // Erst Auto-Stopp prüfen, damit am Ende nicht kurz die nächste Runde aufblitzt
         if (settings.autoStopCycles > 0 && cycles >= settings.autoStopCycles) {
           stop(true);
           return;
         }
+        updateCounter();
       }
       onPhaseEnter(phaseIndex);
       phase = PHASES[phaseIndex];
@@ -301,7 +306,8 @@
   }
 
   function updateCounter() {
-    counterEl.textContent = cycles > 0 ? cycles + (cycles === 1 ? " Runde" : " Runden") : "";
+    // Zeigt die aktuell laufende Runde ab der ersten: "1. Runde", "2. Runde", ...
+    counterEl.textContent = (cycles + 1) + ". Runde";
   }
 
   /* ======================= Theme ======================= */
