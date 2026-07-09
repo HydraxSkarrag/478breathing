@@ -46,7 +46,7 @@
 
   var MIN_SCALE = 0.35;
   var MAX_SCALE = 1.0;
-  var RING_CIRCUMFERENCE = 2 * Math.PI * 70; // Ring innen, r = 70 im SVG
+  var RING_CIRCUMFERENCE = 2 * Math.PI * 77.5; // Ring am Rand, r = 77.5 im SVG
 
   /* --- DOM --- */
   var stage = document.getElementById("stage");
@@ -98,44 +98,62 @@
     if (audioCtx.state === "suspended") audioCtx.resume();
   }
 
-  // Warmer, tiefer Atem-Ton: leise gefilterte Dreieckswellen mit Chorus-Verstimmung
-  // und weicher Hüllkurve (anschwellend beim Einatmen, ausklingend beim Ausatmen).
+  // Rosa-Rausch-Puffer (einmalig erzeugt), Basis für den "Ocean-Breath".
+  var noiseBuffer = null;
+  function getNoiseBuffer() {
+    if (noiseBuffer) return noiseBuffer;
+    var len = Math.floor(audioCtx.sampleRate * 2);
+    noiseBuffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+    var d = noiseBuffer.getChannelData(0);
+    var b0 = 0, b1 = 0, b2 = 0; // Paul-Kellett-Näherung für rosa Rauschen
+    for (var i = 0; i < len; i++) {
+      var white = Math.random() * 2 - 1;
+      b0 = 0.99765 * b0 + white * 0.0990460;
+      b1 = 0.96300 * b1 + white * 0.2965164;
+      b2 = 0.57000 * b2 + white * 1.0526913;
+      d[i] = (b0 + b1 + b2 + white * 0.1848) * 0.16;
+    }
+    return noiseBuffer;
+  }
+
+  // "Ocean-Breath": leises gefiltertes Rauschen, das beim Einatmen anschwillt
+  // und beim Ausatmen abebbt – wie Atem/Wellen, ohne Melodie.
   function playBreath(dir, durMs) {
     if (!settings.sound || !audioCtx) return;
     var dur = durMs / 1000;
     var now = audioCtx.currentTime;
+
+    var src = audioCtx.createBufferSource();
+    src.buffer = getNoiseBuffer();
+    src.loop = true;
+
     var filter = audioCtx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.value = 650;
-    filter.Q.value = 0.6;
+    filter.Q.value = 0.8;
+
     var g = audioCtx.createGain();
-    filter.connect(g).connect(master);
+    src.connect(filter).connect(g).connect(master);
 
-    var fromF = dir === "in" ? 165 : 220;
-    var toF   = dir === "in" ? 220 : 165;
-    var peak = 0.05;
-
+    var peak = 0.11;
     g.gain.setValueAtTime(0.0001, now);
+
     if (dir === "in") {
-      // sanft anschwellen, am Ende ausblenden
-      g.gain.linearRampToValueAtTime(peak, now + dur * 0.6);
-      g.gain.setValueAtTime(peak, now + dur * 0.8);
+      // dunkel -> heller (Luft strömt ein), Lautstärke schwillt an
+      filter.frequency.setValueAtTime(420, now);
+      filter.frequency.linearRampToValueAtTime(1150, now + dur);
+      g.gain.linearRampToValueAtTime(peak, now + dur * 0.78);
+      g.gain.setValueAtTime(peak, now + dur * 0.86);
       g.gain.linearRampToValueAtTime(0.0001, now + dur);
     } else {
-      // kurz ansetzen, dann lang ausatmen
-      g.gain.linearRampToValueAtTime(peak, now + dur * 0.18);
+      // heller -> dunkler (Luft strömt aus), langes Ausklingen
+      filter.frequency.setValueAtTime(1050, now);
+      filter.frequency.linearRampToValueAtTime(360, now + dur);
+      g.gain.linearRampToValueAtTime(peak, now + dur * 0.14);
       g.gain.linearRampToValueAtTime(0.0001, now + dur);
     }
 
-    [0, 2].forEach(function (detune) {
-      var osc = audioCtx.createOscillator();
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(fromF + detune, now);
-      osc.frequency.linearRampToValueAtTime(toF + detune, now + dur);
-      osc.connect(filter);
-      osc.start(now);
-      osc.stop(now + dur + 0.05);
-    });
+    src.start(now);
+    src.stop(now + dur + 0.05);
   }
 
   // Sanfte Klangschale zum Abschluss (Auto-Stopp): tiefer Grundton, wenige
@@ -149,18 +167,18 @@
     filter.Q.value = 0.5;
     filter.connect(master);
 
-    var base = 210;
-    var dur = 7.5;
-    var partials = [{ f: 1.0, g: 1.0 }, { f: 2.0, g: 0.38 }, { f: 3.01, g: 0.16 }];
+    var base = 174.6; // F3, tief und warm
+    var dur = 8.5;
+    var partials = [{ f: 1.0, g: 1.0 }, { f: 2.4, g: 0.22 }];
     partials.forEach(function (p) {
-      [0, 0.5].forEach(function (detune) { // Schwebung
+      [0, 0.4].forEach(function (detune) { // sanfte Schwebung
         var osc = audioCtx.createOscillator();
         var g = audioCtx.createGain();
         osc.type = "sine";
         osc.frequency.value = base * p.f + detune;
-        var peak = 0.06 * p.g;
+        var peak = 0.05 * p.g;
         g.gain.setValueAtTime(0.0001, now);
-        g.gain.linearRampToValueAtTime(peak, now + 0.06);
+        g.gain.linearRampToValueAtTime(peak, now + 0.12); // weicher Anschlag
         g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
         osc.connect(g).connect(filter);
         osc.start(now);
