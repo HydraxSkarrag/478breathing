@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+  <meta name="description" content="Minimalistische Unterstützung für die 4-7-8-Atmung: 4 Sekunden einatmen, 7 halten, 8 ausatmen.">
+  <title>4-7-8 Atmung</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="stage" id="stage">
+    <!-- Der Kreis ist selbst der Start/Stopp-Button -->
+    <button class="breath" id="breathBtn" type="button" aria-label="Atmung starten">
+      <svg class="breath-svg" viewBox="0 0 200 200" aria-hidden="true">
+        <circle class="fill" id="fill" cx="100" cy="100" r="80"></circle>
+        <circle class="ring" id="ring" cx="100" cy="100" r="80"></circle>
+      </svg>
+
+      <!-- Play-Icon im Ruhezustand -->
+      <svg class="ctrl-icon play-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 5v14l11-7z"></path>
+      </svg>
+      <!-- Stopp-Icon während des Laufens (bei Hover/Fokus) -->
+      <svg class="ctrl-icon stop-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+      </svg>
+
+      <span class="phase-text" id="phaseText" aria-hidden="true"></span>
+    </button>
+
+    <div class="counter" id="counter" aria-live="polite"></div>
+  </main>
+
+  <!-- Dezentes Einstellungs-Zahnrad -->
+  <button class="settings-toggle" id="settingsToggle" type="button" aria-label="Einstellungen" aria-expanded="false" aria-controls="settingsPanel">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.4 4a6.8 6.8 0 0 0-.07-1l2-1.55-2-3.46-2.36.95a6.9 6.9 0 0 0-1.7-1l-.36-2.49h-4l-.36 2.49a6.9 6.9 0 0 0-1.7 1L5.6 6.5l-2 3.46L5.67 11a6.9 6.9 0 0 0 0 2l-2 1.55 2 3.46 2.36-.95c.5.42 1.08.76 1.7 1l.36 2.49h4l.36-2.49c.62-.24 1.2-.58 1.7-1l2.36.95 2-3.46-2-1.55c.05-.33.07-.66.07-1z"></path>
+    </svg>
+  </button>
+
+  <!-- Einstellungs-Panel -->
+  <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Einstellungen" hidden>
+    <h2>Einstellungen</h2>
+
+    <label class="row">
+      <span>Design</span>
+      <select id="setTheme">
+        <option value="system">System</option>
+        <option value="light">Hell</option>
+        <option value="dark">Dunkel</option>
+      </select>
+    </label>
+
+    <label class="row switch-row">
+      <span>Ton</span>
+      <input type="checkbox" id="setSound" class="switch">
+    </label>
+
+    <label class="row switch-row">
+      <span>Farbwechsel</span>
+      <input type="checkbox" id="setColor" class="switch">
+    </label>
+
+    <label class="row switch-row">
+      <span>Vibration</span>
+      <input type="checkbox" id="setVibration" class="switch">
+    </label>
+
+    <label class="row switch-row">
+      <span>Phasen-Text</span>
+      <input type="checkbox" id="setPhaseText" class="switch">
+    </label>
+
+    <label class="row switch-row">
+      <span>Zyklus-Zähler</span>
+      <input type="checkbox" id="setCounter" class="switch">
+    </label>
+
+    <label class="row">
+      <span>Auto-Stopp</span>
+      <select id="setAutoStop">
+        <option value="0">Unbegrenzt</option>
+        <option value="4">4 Runden</option>
+        <option value="8">8 Runden</option>
+        <option value="12">12 Runden</option>
+      </select>
+    </label>
+  </div>
+
+  <footer class="footer">
+    <a href="impressum.html">Impressum</a>
+    <span aria-hidden="true">·</span>
+    <a href="datenschutz.html">Datenschutz</a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+/* ---------------------------------------------------------------------------
+   4-7-8 Atmung — minimalistisches Stylesheet
+   Farben über CSS-Variablen; System-, Hell- und Dunkelmodus.
+--------------------------------------------------------------------------- */
+
+:root {
+  /* Hell (Default) */
+  --bg: #f4f6f8;
+  --fg: #3a4048;
+  --muted: #9aa4ae;
+  --panel-bg: #ffffff;
+  --panel-border: #e4e8ec;
+  --track: rgba(0, 0, 0, 0.06);
+
+  /* Phasenfarben */
+  --c-inhale: #7fb77e;     /* Einatmen – beruhigendes Grün */
+  --c-hold-start: #f2c94c; /* Halten – Gelb ... */
+  --c-hold-end: #f2994a;   /* ... nach Orange */
+  --c-exhale: #6fa8dc;     /* Ausatmen – beruhigendes Blau */
+  --c-idle: #c8d0d8;       /* Ruhezustand */
+  --accent: #8a94a0;       /* monochrom, wenn Farbwechsel aus */
+}
+
+/* Dunkel per System-Einstellung (nur wenn nicht explizit auf Hell gestellt) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1116;
+    --fg: #c4ccd4;
+    --muted: #5b6672;
+    --panel-bg: #161b22;
+    --panel-border: #262d36;
+    --track: rgba(255, 255, 255, 0.07);
+    --c-inhale: #6fae72;
+    --c-hold-start: #e0b24a;
+    --c-hold-end: #dc8b46;
+    --c-exhale: #6398c9;
+    --c-idle: #2a323b;
+    --accent: #79838f;
+  }
+}
+
+/* Dunkel explizit erzwungen */
+:root[data-theme="dark"] {
+  --bg: #0e1116;
+  --fg: #c4ccd4;
+  --muted: #5b6672;
+  --panel-bg: #161b22;
+  --panel-border: #262d36;
+  --track: rgba(255, 255, 255, 0.07);
+  --c-inhale: #6fae72;
+  --c-hold-start: #e0b24a;
+  --c-hold-end: #dc8b46;
+  --c-exhale: #6398c9;
+  --c-idle: #2a323b;
+  --accent: #79838f;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  transition: background-color 0.6s ease, color 0.6s ease;
+}
+
+/* --- Bühne mit dem Kreis --- */
+.stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.breath {
+  position: relative;
+  width: min(78vw, 78vh, 460px);
+  height: min(78vw, 78vh, 460px);
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.breath:focus-visible {
+  outline: 2px solid var(--muted);
+  outline-offset: 8px;
+  border-radius: 50%;
+}
+
+.breath-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.fill {
+  fill: var(--c-idle);
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.35);
+}
+
+/* Sanftes Zurückgleiten beim Beenden */
+.breath.smooth .fill { transition: transform 0.8s ease, fill 0.8s ease; }
+
+.ring {
+  fill: none;
+  stroke: var(--c-hold-start);
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0;
+  /* Umfang 2·π·80 ≈ 502.65; Start oben (−90°) */
+  stroke-dasharray: 502.65;
+  stroke-dashoffset: 502.65;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+/* --- Steuer-Icons (Play/Stopp) --- */
+.ctrl-icon {
+  position: absolute;
+  width: 16%;
+  height: 16%;
+  fill: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+:root[data-theme="dark"] .ctrl-icon,
+:root:not([data-theme="light"]) .ctrl-icon { fill: rgba(255, 255, 255, 0.9); }
+
+.play-icon { opacity: 0.9; }
+.stop-icon { opacity: 0; }
+
+/* Während des Laufens: Play verbergen, Stopp nur bei Hover/Fokus zeigen */
+.stage.running .play-icon { opacity: 0; }
+.stage.running .breath:hover .stop-icon,
+.stage.running .breath:focus-visible .stop-icon { opacity: 0.85; }
+
+/* --- Phasen-Text --- */
+.phase-text {
+  position: absolute;
+  bottom: 26%;
+  font-size: clamp(0.85rem, 2.6vw, 1.1rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.stage.running.show-phase .phase-text { opacity: 0.85; }
+
+/* --- Zyklus-Zähler --- */
+.counter {
+  min-height: 1.2em;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.stage.running.show-counter .counter { opacity: 1; }
+
+/* --- Zahnrad --- */
+.settings-toggle {
+  position: fixed;
+  top: max(0.9rem, env(safe-area-inset-top));
+  right: max(0.9rem, env(safe-area-inset-right));
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--muted);
+  opacity: 0.4;
+  transition: opacity 0.25s ease, transform 0.4s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.settings-toggle:hover,
+.settings-toggle:focus-visible { opacity: 0.9; outline: none; }
+.settings-toggle[aria-expanded="true"] { opacity: 0.9; transform: rotate(30deg); }
+.settings-toggle svg { width: 100%; height: 100%; fill: currentColor; }
+
+/* --- Einstellungs-Panel --- */
+.settings-panel {
+  position: fixed;
+  top: max(3.4rem, calc(env(safe-area-inset-top) + 3rem));
+  right: max(0.9rem, env(safe-area-inset-right));
+  width: min(88vw, 300px);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 0.5rem 1rem 1rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+  z-index: 10;
+}
+.settings-panel[hidden] { display: none; }
+
+.settings-panel h2 {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0.9rem 0 0.4rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  font-size: 0.95rem;
+  border-top: 1px solid var(--panel-border);
+}
+.row:first-of-type { border-top: none; }
+
+.settings-panel select {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+}
+
+/* Schalter */
+.switch-row { cursor: pointer; }
+.switch {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--track);
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+  flex: none;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.25s ease;
+}
+.switch:checked { background: var(--c-inhale); }
+.switch:checked::after { transform: translateX(18px); }
+.switch:focus-visible { outline: 2px solid var(--muted); outline-offset: 2px; }
+
+/* --- Fußzeile --- */
+.footer {
+  position: fixed;
+  bottom: max(0.7rem, env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--muted);
+  opacity: 0.5;
+  transition: opacity 0.25s ease;
+}
+.footer:hover { opacity: 0.9; }
+.footer a { color: inherit; text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+.footer span { margin: 0 0.4em; }
+
+/* --- Rechtstext-Seiten (impressum/datenschutz) --- */
+.legal {
+  overflow: auto;
+  display: block;
+}
+.legal .content {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 4rem 1.4rem 6rem;
+  line-height: 1.6;
+}
+.legal h1 { font-size: 1.5rem; margin-bottom: 0.4rem; }
+.legal h2 { font-size: 1rem; margin-top: 2rem; }
+.legal a { color: var(--c-exhale); }
+.legal .back {
+  display: inline-block;
+  margin-bottom: 2rem;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.legal .back:hover { text-decoration: underline; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.001ms !important; }
+}

@@ -1,0 +1,70 @@
+name: Deploy to all-inkl (FTP)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ftp-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      # Optionale Repo-/Environment-Variable; Default ist das FTP-Home-Verzeichnis.
+      FTP_SERVER_DIR: ${{ vars.FTP_SERVER_DIR }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check FTP secrets
+        if: ${{ env.FTP_SERVER == '' }}
+        run: |
+          echo "::warning::FTP-Secrets fehlen. FTP_SERVER, FTP_USERNAME und FTP_PASSWORD (environment: production) setzen und erneut ausführen. Deploy wird vorerst übersprungen."
+
+      # Commit-SHA an CSS/JS-URLs anhängen, damit Browser die neue Version laden
+      # statt der bis zu 7 Tage gecachten (siehe Expires-Header in .htaccess).
+      - name: Cache-bust CSS/JS
+        if: ${{ env.FTP_SERVER != '' }}
+        run: |
+          VER="${GITHUB_SHA:0:8}"
+          find . -name '*.html' -not -path './.git/*' -not -path './.github/*' -print0 \
+            | xargs -0 sed -i \
+              -e "s#\(styles\.css\)\"#\1?v=${VER}\"#g" \
+              -e "s#\(app\.js\)\"#\1?v=${VER}\"#g"
+          echo "CSS/JS mit ?v=${VER} versehen"
+
+      - name: Install lftp
+        if: ${{ env.FTP_SERVER != '' }}
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+
+      # lftp bewältigt all-inkls explizites FTPS (AUTH TLS) zuverlässig.
+      - name: Deploy via lftp (FTPS)
+        if: ${{ env.FTP_SERVER != '' }}
+        run: |
+          TARGET="${FTP_SERVER_DIR:-.}"
+          lftp -c "
+            set cmd:fail-exit true;
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            set ssl:verify-certificate no;
+            set ftp:passive-mode true;
+            set net:max-retries 3;
+            set net:timeout 20;
+            open -u '${FTP_USERNAME}','${FTP_PASSWORD}' '${FTP_SERVER}';
+            mirror --reverse --delete --verbose --parallel=1 \
+              --exclude '(^|/)\.git' \
+              --exclude '(^|/)\.github/' \
+              --exclude '(^|/)\.claude/' \
+              --exclude '(^|/)\.gitignore$' \
+              --exclude '\.md$' \
+              --exclude '(^|/)LICENSE$' \
+              --exclude '(^|/)\.DS_Store$' \
+              ./ '${TARGET}';
+          "
