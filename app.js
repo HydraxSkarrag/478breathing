@@ -8,6 +8,7 @@
   /* --- Einstellungen (lokal gespeichert) --- */
   var STORAGE_KEY = "breathe478.settings";
   var defaults = {
+    lang: "de",          // de | en (Deutsch ist Standard)
     theme: "system",     // system | light | dark
     sound: false,        // default aus
     colorAnimation: true,
@@ -16,6 +17,33 @@
     autoStopCycles: 0    // 0 = unbegrenzt
   };
   var settings = loadSettings();
+
+  /* --- Übersetzungen (Deutsch/Englisch) --- */
+  var I18N = {
+    de: {
+      settings_title: "Einstellungen", language: "Sprache", design: "Design",
+      opt_system: "System", opt_light: "Hell", opt_dark: "Dunkel",
+      sound: "Ton", color: "Farbwechsel", phaseText: "Phasen-Text",
+      counter: "Zyklus-Zähler", autostop: "Auto-Stopp",
+      opt_unlimited: "Unbegrenzt", round: "Runde", rounds: "Runden",
+      phase_inhale: "Einatmen", phase_hold: "Halten", phase_exhale: "Ausatmen",
+      aria_start: "Atmung starten", aria_stop: "Atmung beenden", aria_settings: "Einstellungen",
+      imprint: "Impressum", privacy: "Datenschutz",
+      roundLabel: function (n) { return n + ". Runde"; }
+    },
+    en: {
+      settings_title: "Settings", language: "Language", design: "Theme",
+      opt_system: "System", opt_light: "Light", opt_dark: "Dark",
+      sound: "Sound", color: "Color change", phaseText: "Phase label",
+      counter: "Cycle counter", autostop: "Auto-stop",
+      opt_unlimited: "Unlimited", round: "round", rounds: "rounds",
+      phase_inhale: "Inhale", phase_hold: "Hold", phase_exhale: "Exhale",
+      aria_start: "Start breathing", aria_stop: "Stop breathing", aria_settings: "Settings",
+      imprint: "Imprint", privacy: "Privacy",
+      roundLabel: function (n) { return "Round " + n; }
+    }
+  };
+  function T() { return I18N[settings.lang] || I18N.de; }
 
   function loadSettings() {
     var s = {};
@@ -157,33 +185,37 @@
     src.stop(now + dur + 0.05);
   }
 
-  // Sanfte Klangschale zum Abschluss (Auto-Stopp): tiefer Grundton, wenige
-  // Partiale, leichte Schwebung, langer Ausklang – gefiltert und leise.
-  function playBowl() {
+  // Tiefes, weiches Gong-Wummern zum Abschluss (Auto-Stopp): sehr tiefer
+  // Grundton mit Obertönen, langsame Schwebung (Wummern), dunkler Ausklang.
+  function playGong() {
     if (!settings.sound || !audioCtx) return;
     var now = audioCtx.currentTime;
-    var dur = 8.5;
-    // Filter dunkelt im Ausklang ab wie eine echte Schale
+    var dur = 9;
+
+    // Gemeinsame Hüllkurve (weicher Anschlag, langer exponentieller Ausklang)
+    var env = audioCtx.createGain();
+    env.gain.setValueAtTime(0.0001, now);
+    env.gain.linearRampToValueAtTime(1, now + 0.25);
+    env.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+    // Filter dunkelt im Ausklang weiter ab
     var filter = audioCtx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.Q.value = 0.4;
-    filter.frequency.setValueAtTime(2200, now);
-    filter.frequency.linearRampToValueAtTime(700, now + dur);
-    filter.connect(master);
+    filter.Q.value = 0.5;
+    filter.frequency.setValueAtTime(700, now);
+    filter.frequency.linearRampToValueAtTime(200, now + dur);
+    filter.connect(env).connect(master);
 
-    var base = 174.6; // F3, tief und warm
-    // harmonische Obertöne (Oktave, Duodezime) – konsonant statt metallisch
-    var partials = [{ f: 1.0, g: 1.0 }, { f: 2.0, g: 0.3 }, { f: 3.0, g: 0.1 }];
+    var base = 62; // sehr tief – auf Kopfhörern spürbares Wummern
+    var partials = [{ f: 1.0, g: 1.0 }, { f: 2.0, g: 0.55 }, { f: 3.0, g: 0.28 }, { f: 4.02, g: 0.12 }];
     partials.forEach(function (p) {
-      [0, 0.3].forEach(function (detune) { // sanfte Schwebung
+      // zwei leicht verstimmte Stimmen -> langsame Schwebung = weiches Wummern
+      [0, 1.5].forEach(function (detune) {
         var osc = audioCtx.createOscillator();
         var g = audioCtx.createGain();
         osc.type = "sine";
         osc.frequency.value = base * p.f + detune;
-        var peak = 0.05 * p.g;
-        g.gain.setValueAtTime(0.0001, now);
-        g.gain.linearRampToValueAtTime(peak, now + 0.15); // weicher Anschlag
-        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        g.gain.value = 0.045 * p.g;
         osc.connect(g).connect(filter);
         osc.start(now);
         osc.stop(now + dur + 0.1);
@@ -217,7 +249,7 @@
     requestWakeLock();
     breathBtn.classList.remove("smooth");
     stage.classList.add("running");
-    breathBtn.setAttribute("aria-label", "Atmung beenden");
+    breathBtn.setAttribute("aria-label", T().aria_stop);
     updateCounter();
     onPhaseEnter(0);
     rafId = requestAnimationFrame(loop);
@@ -229,8 +261,8 @@
     cancelAnimationFrame(rafId);
     releaseWakeLock();
     stage.classList.remove("running");
-    breathBtn.setAttribute("aria-label", "Atmung starten");
-    if (auto) playBowl();
+    breathBtn.setAttribute("aria-label", T().aria_start);
+    if (auto) playGong();
     // Sanft in den Ruhezustand zurück
     breathBtn.classList.add("smooth");
     fill.style.transform = "scale(" + MIN_SCALE + ")";
@@ -249,7 +281,12 @@
     if (phase.name === "inhale") playBreath("in", phase.duration);
     else if (phase.name === "exhale") playBreath("out", phase.duration);
     // Halten bleibt still
-    if (settings.phaseText) phaseTextEl.textContent = phase.label;
+    if (settings.phaseText) phaseTextEl.textContent = phaseLabel(phase.name);
+  }
+
+  function phaseLabel(name) {
+    var t = T();
+    return name === "inhale" ? t.phase_inhale : name === "hold" ? t.phase_hold : t.phase_exhale;
   }
 
   function loop(now) {
@@ -306,8 +343,33 @@
   }
 
   function updateCounter() {
-    // Zeigt die aktuell laufende Runde ab der ersten: "1. Runde", "2. Runde", ...
-    counterEl.textContent = (cycles + 1) + ". Runde";
+    // Zeigt die aktuell laufende Runde ab der ersten: "1. Runde" / "Round 1", ...
+    counterEl.textContent = T().roundLabel(cycles + 1);
+  }
+
+  /* ======================= Sprache ======================= */
+  function applyLang() {
+    var t = T();
+    document.documentElement.lang = settings.lang;
+    // Alle statischen Texte mit data-i18n
+    var nodes = document.querySelectorAll("[data-i18n]");
+    for (var i = 0; i < nodes.length; i++) {
+      var key = nodes[i].getAttribute("data-i18n");
+      if (t[key] != null) nodes[i].textContent = t[key];
+    }
+    // Auto-Stopp-Optionen (mit Zahl)
+    var as = document.getElementById("setAutoStop");
+    for (var j = 0; j < as.options.length; j++) {
+      var v = parseInt(as.options[j].value, 10);
+      as.options[j].textContent = v === 0 ? t.opt_unlimited : (v + " " + (v === 1 ? t.round : t.rounds));
+    }
+    // aria-Labels
+    settingsToggle.setAttribute("aria-label", t.aria_settings);
+    settingsPanel.setAttribute("aria-label", t.settings_title);
+    breathBtn.setAttribute("aria-label", running ? t.aria_stop : t.aria_start);
+    // Laufende Anzeige aktualisieren
+    if (running && settings.phaseText) phaseTextEl.textContent = phaseLabel(PHASES[phaseIndex].name);
+    if (running) updateCounter();
   }
 
   /* ======================= Theme ======================= */
@@ -326,6 +388,7 @@
   }
 
   function syncControls() {
+    document.getElementById("setLang").value = settings.lang;
     document.getElementById("setTheme").value = settings.theme;
     document.getElementById("setSound").checked = settings.sound;
     document.getElementById("setColor").checked = settings.colorAnimation;
@@ -335,6 +398,9 @@
   }
 
   function wireControls() {
+    document.getElementById("setLang").addEventListener("change", function (e) {
+      settings.lang = e.target.value; saveSettings(); applyLang();
+    });
     document.getElementById("setTheme").addEventListener("change", function (e) {
       settings.theme = e.target.value; saveSettings(); applyTheme();
     });
@@ -387,6 +453,7 @@
   }
 
   /* --- Init --- */
+  applyLang();
   applyTheme();
   syncControls();
   applyDisplayToggles();

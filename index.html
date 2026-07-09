@@ -43,39 +43,47 @@
 
   <!-- Einstellungs-Panel -->
   <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Einstellungen" hidden>
-    <h2>Einstellungen</h2>
+    <h2 data-i18n="settings_title">Einstellungen</h2>
 
     <label class="row">
-      <span>Design</span>
+      <span data-i18n="language">Sprache</span>
+      <select id="setLang">
+        <option value="de">Deutsch</option>
+        <option value="en">English</option>
+      </select>
+    </label>
+
+    <label class="row">
+      <span data-i18n="design">Design</span>
       <select id="setTheme">
-        <option value="system">System</option>
-        <option value="light">Hell</option>
-        <option value="dark">Dunkel</option>
+        <option value="system" data-i18n="opt_system">System</option>
+        <option value="light" data-i18n="opt_light">Hell</option>
+        <option value="dark" data-i18n="opt_dark">Dunkel</option>
       </select>
     </label>
 
     <label class="row switch-row">
-      <span>Ton</span>
+      <span data-i18n="sound">Ton</span>
       <input type="checkbox" id="setSound" class="switch">
     </label>
 
     <label class="row switch-row">
-      <span>Farbwechsel</span>
+      <span data-i18n="color">Farbwechsel</span>
       <input type="checkbox" id="setColor" class="switch">
     </label>
 
     <label class="row switch-row">
-      <span>Phasen-Text</span>
+      <span data-i18n="phaseText">Phasen-Text</span>
       <input type="checkbox" id="setPhaseText" class="switch">
     </label>
 
     <label class="row switch-row">
-      <span>Zyklus-Zähler</span>
+      <span data-i18n="counter">Zyklus-Zähler</span>
       <input type="checkbox" id="setCounter" class="switch">
     </label>
 
     <label class="row">
-      <span>Auto-Stopp</span>
+      <span data-i18n="autostop">Auto-Stopp</span>
       <select id="setAutoStop">
         <option value="0">Unbegrenzt</option>
         <option value="1">1 Runde</option>
@@ -88,9 +96,9 @@
   </div>
 
   <footer class="footer">
-    <a href="impressum.html">Impressum</a>
+    <a href="impressum.html" data-i18n="imprint">Impressum</a>
     <span aria-hidden="true">·</span>
-    <a href="datenschutz.html">Datenschutz</a>
+    <a href="datenschutz.html" data-i18n="privacy">Datenschutz</a>
   </footer>
 
   <script src="app.js"></script>

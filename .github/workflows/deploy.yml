@@ -1,4 +1,4 @@
-name: Deploy to all-inkl (FTP)
+name: Deploy via FTP
 
 on:
   push:
@@ -17,8 +17,10 @@ jobs:
       FTP_SERVER: ${{ secrets.FTP_SERVER }}
       FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-      # Optionale Repo-/Environment-Variable; Default ist das FTP-Home-Verzeichnis.
+      # Optional: target directory on the server (defaults to the FTP home directory).
       FTP_SERVER_DIR: ${{ vars.FTP_SERVER_DIR }}
+      # Optional: set to "false" for plain FTP if the host does not support FTPS (default: TLS on).
+      FTP_TLS: ${{ vars.FTP_TLS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,10 +28,10 @@ jobs:
       - name: Check FTP secrets
         if: ${{ env.FTP_SERVER == '' }}
         run: |
-          echo "::warning::FTP-Secrets fehlen. FTP_SERVER, FTP_USERNAME und FTP_PASSWORD (environment: production) setzen und erneut ausführen. Deploy wird vorerst übersprungen."
+          echo "::warning::FTP secrets are missing. Set FTP_SERVER, FTP_USERNAME and FTP_PASSWORD (environment: production) and re-run. Skipping deploy for now."
 
-      # Commit-SHA an CSS/JS-URLs anhängen, damit Browser die neue Version laden
-      # statt der bis zu 7 Tage gecachten (siehe Expires-Header in .htaccess).
+      # Append the commit SHA to the CSS/JS URLs so browsers fetch the new version
+      # instead of a cached one (see the Expires headers in .htaccess).
       - name: Cache-bust CSS/JS
         if: ${{ env.FTP_SERVER != '' }}
         run: |
@@ -38,22 +40,26 @@ jobs:
             | xargs -0 sed -i \
               -e "s#\(styles\.css\)\"#\1?v=${VER}\"#g" \
               -e "s#\(app\.js\)\"#\1?v=${VER}\"#g"
-          echo "CSS/JS mit ?v=${VER} versehen"
+          echo "Stamped CSS/JS with ?v=${VER}"
 
       - name: Install lftp
         if: ${{ env.FTP_SERVER != '' }}
         run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
 
-      # lftp bewältigt all-inkls explizites FTPS (AUTH TLS) zuverlässig.
-      - name: Deploy via lftp (FTPS)
+      # lftp mirrors the working tree to the server. Explicit FTPS (AUTH TLS) is used
+      # by default; set the FTP_TLS variable to "false" for plain FTP.
+      - name: Deploy via lftp
         if: ${{ env.FTP_SERVER != '' }}
         run: |
           TARGET="${FTP_SERVER_DIR:-.}"
+          if [ "${FTP_TLS:-true}" = "false" ]; then
+            SSL="set ftp:ssl-allow false;"
+          else
+            SSL="set ftp:ssl-force true; set ftp:ssl-protect-data true; set ssl:verify-certificate no;"
+          fi
           lftp -c "
             set cmd:fail-exit true;
-            set ftp:ssl-force true;
-            set ftp:ssl-protect-data true;
-            set ssl:verify-certificate no;
+            ${SSL}
             set ftp:passive-mode true;
             set net:max-retries 3;
             set net:timeout 20;
