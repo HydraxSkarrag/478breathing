@@ -119,6 +119,8 @@ body {
   transform-box: fill-box;
   transform-origin: center;
   transform: scale(0.35);
+  /* Mini-Transition beim Farbwechsel zwischen den Phasen */
+  transition: fill 0.5s ease;
 }
 
 /* Sanftes Zurückgleiten beim Beenden */
@@ -126,15 +128,16 @@ body {
 
 .ring {
   fill: none;
-  stroke: var(--c-hold-start);
+  stroke: var(--c-hold-end);
   stroke-width: 5;
   stroke-linecap: round;
   opacity: 0;
-  /* Umfang 2·π·80 ≈ 502.65; Start oben (−90°) */
-  stroke-dasharray: 502.65;
-  stroke-dashoffset: 502.65;
+  /* Innerhalb des Kreises (r = 70). Umfang 2·π·70 ≈ 439.82; Start oben (−90°) */
+  stroke-dasharray: 439.82;
+  stroke-dashoffset: 439.82;
   transform: rotate(-90deg);
   transform-origin: center;
+  transition: opacity 0.4s ease;
 }
 
 /* --- Steuer-Icons (Play/Stopp) --- */
@@ -157,14 +160,14 @@ body {
 .stage.running .breath:hover .stop-icon,
 .stage.running .breath:focus-visible .stop-icon { opacity: 0.85; }
 
-/* --- Phasen-Text --- */
+/* --- Phasen-Text (zentriert über der farbigen Füllung, in beiden Modi lesbar) --- */
 .phase-text {
   position: absolute;
-  bottom: 26%;
   font-size: clamp(0.85rem, 2.6vw, 1.1rem);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.9);
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s ease;

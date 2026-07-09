@@ -11,7 +11,6 @@
     theme: "system",     // system | light | dark
     sound: false,        // default aus
     colorAnimation: true,
-    vibration: false,
     phaseText: false,
     cycleCounter: true,
     autoStopCycles: 0    // 0 = unbegrenzt
@@ -47,7 +46,7 @@
 
   var MIN_SCALE = 0.35;
   var MAX_SCALE = 1.0;
-  var RING_CIRCUMFERENCE = 2 * Math.PI * 80; // r = 80 im SVG
+  var RING_CIRCUMFERENCE = 2 * Math.PI * 70; // Ring innen, r = 70 im SVG
 
   /* --- DOM --- */
   var stage = document.getElementById("stage");
@@ -78,26 +77,6 @@
     colors.accent    = cs.getPropertyValue("--accent").trim();
   }
 
-  function parseColor(str) {
-    str = str.trim();
-    if (str.charAt(0) === "#") {
-      if (str.length === 4) {
-        return [parseInt(str[1] + str[1], 16), parseInt(str[2] + str[2], 16), parseInt(str[3] + str[3], 16)];
-      }
-      return [parseInt(str.substr(1, 2), 16), parseInt(str.substr(3, 2), 16), parseInt(str.substr(5, 2), 16)];
-    }
-    var m = str.match(/(\d+)/g);
-    return m ? [+m[0], +m[1], +m[2]] : [0, 0, 0];
-  }
-
-  function lerpColor(a, b, t) {
-    var ca = parseColor(a), cb = parseColor(b);
-    var r = Math.round(ca[0] + (cb[0] - ca[0]) * t);
-    var g = Math.round(ca[1] + (cb[1] - ca[1]) * t);
-    var bl = Math.round(ca[2] + (cb[2] - ca[2]) * t);
-    return "rgb(" + r + "," + g + "," + bl + ")";
-  }
-
   function easeInOut(t) {
     return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   }
@@ -119,58 +98,91 @@
     if (audioCtx.state === "suspended") audioCtx.resume();
   }
 
-  // Weicher, über die ganze Phase gleitender Sinuston
-  function playGlide(fromFreq, toFreq, durMs) {
+  // Warmer, tiefer Atem-Ton: leise gefilterte Dreieckswellen mit Chorus-Verstimmung
+  // und weicher Hüllkurve (anschwellend beim Einatmen, ausklingend beim Ausatmen).
+  function playBreath(dir, durMs) {
     if (!settings.sound || !audioCtx) return;
     var dur = durMs / 1000;
     var now = audioCtx.currentTime;
-    var osc = audioCtx.createOscillator();
+    var filter = audioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 650;
+    filter.Q.value = 0.6;
     var g = audioCtx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(fromFreq, now);
-    osc.frequency.linearRampToValueAtTime(toFreq, now + dur);
-    var peak = 0.07;
-    var fade = Math.min(0.9, dur * 0.3);
-    g.gain.setValueAtTime(0, now);
-    g.gain.linearRampToValueAtTime(peak, now + fade);
-    g.gain.setValueAtTime(peak, now + dur - fade);
-    g.gain.linearRampToValueAtTime(0, now + dur);
-    osc.connect(g).connect(master);
-    osc.start(now);
-    osc.stop(now + dur + 0.05);
+    filter.connect(g).connect(master);
+
+    var fromF = dir === "in" ? 165 : 220;
+    var toF   = dir === "in" ? 220 : 165;
+    var peak = 0.05;
+
+    g.gain.setValueAtTime(0.0001, now);
+    if (dir === "in") {
+      // sanft anschwellen, am Ende ausblenden
+      g.gain.linearRampToValueAtTime(peak, now + dur * 0.6);
+      g.gain.setValueAtTime(peak, now + dur * 0.8);
+      g.gain.linearRampToValueAtTime(0.0001, now + dur);
+    } else {
+      // kurz ansetzen, dann lang ausatmen
+      g.gain.linearRampToValueAtTime(peak, now + dur * 0.18);
+      g.gain.linearRampToValueAtTime(0.0001, now + dur);
+    }
+
+    [0, 2].forEach(function (detune) {
+      var osc = audioCtx.createOscillator();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(fromF + detune, now);
+      osc.frequency.linearRampToValueAtTime(toF + detune, now + dur);
+      osc.connect(filter);
+      osc.start(now);
+      osc.stop(now + dur + 0.05);
+    });
   }
 
-  // Meditative Klangschale zum Abschluss (Auto-Stopp)
+  // Sanfte Klangschale zum Abschluss (Auto-Stopp): tiefer Grundton, wenige
+  // Partiale, leichte Schwebung, langer Ausklang – gefiltert und leise.
   function playBowl() {
     if (!settings.sound || !audioCtx) return;
     var now = audioCtx.currentTime;
-    var base = 320;
-    var dur = 4.8;
-    var partials = [
-      { f: 1.0, g: 1.0 }, { f: 2.01, g: 0.55 }, { f: 2.71, g: 0.35 },
-      { f: 3.93, g: 0.2 }, { f: 5.12, g: 0.12 }
-    ];
-    for (var i = 0; i < partials.length; i++) {
-      var p = partials[i];
-      var osc = audioCtx.createOscillator();
-      var g = audioCtx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = base * p.f;
-      var peak = 0.16 * p.g;
-      g.gain.setValueAtTime(0, now);
-      g.gain.linearRampToValueAtTime(peak, now + 0.015);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-      osc.connect(g).connect(master);
-      osc.start(now);
-      osc.stop(now + dur + 0.1);
-    }
+    var filter = audioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 1700;
+    filter.Q.value = 0.5;
+    filter.connect(master);
+
+    var base = 210;
+    var dur = 7.5;
+    var partials = [{ f: 1.0, g: 1.0 }, { f: 2.0, g: 0.38 }, { f: 3.01, g: 0.16 }];
+    partials.forEach(function (p) {
+      [0, 0.5].forEach(function (detune) { // Schwebung
+        var osc = audioCtx.createOscillator();
+        var g = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = base * p.f + detune;
+        var peak = 0.06 * p.g;
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.linearRampToValueAtTime(peak, now + 0.06);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        osc.connect(g).connect(filter);
+        osc.start(now);
+        osc.stop(now + dur + 0.1);
+      });
+    });
   }
 
-  function vibrate(pattern) {
-    if (settings.vibration && navigator.vibrate) {
-      try { navigator.vibrate(pattern); } catch (e) {}
-    }
+  /* --- Bildschirm wachhalten (Wake Lock) während einer Sitzung --- */
+  var wakeLock = null;
+  function requestWakeLock() {
+    if (!("wakeLock" in navigator)) return;
+    navigator.wakeLock.request("screen").then(function (wl) {
+      wakeLock = wl;
+    }).catch(function () { /* z. B. Tab nicht sichtbar – ignorieren */ });
   }
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && running) requestWakeLock();
+  });
 
   /* ======================= Ablauf ======================= */
   function start() {
@@ -180,6 +192,7 @@
     phaseIndex = 0;
     phaseStart = performance.now();
     ensureAudio();
+    requestWakeLock();
     breathBtn.classList.remove("smooth");
     stage.classList.add("running");
     breathBtn.setAttribute("aria-label", "Atmung beenden");
@@ -192,6 +205,7 @@
     if (!running) return;
     running = false;
     cancelAnimationFrame(rafId);
+    releaseWakeLock();
     stage.classList.remove("running");
     breathBtn.setAttribute("aria-label", "Atmung starten");
     if (auto) playBowl();
@@ -210,11 +224,9 @@
   function onPhaseEnter(idx) {
     var phase = PHASES[idx];
     // Ton pro Phase
-    if (phase.name === "inhale") playGlide(196, 294, phase.duration);        // steigend
-    else if (phase.name === "exhale") playGlide(294, 196, phase.duration);   // fallend
+    if (phase.name === "inhale") playBreath("in", phase.duration);
+    else if (phase.name === "exhale") playBreath("out", phase.duration);
     // Halten bleibt still
-    // Haptik an jeder Phasengrenze
-    vibrate(phase.name === "hold" ? 20 : 35);
     if (settings.phaseText) phaseTextEl.textContent = phase.label;
   }
 
@@ -255,10 +267,10 @@
       ring.style.opacity = "0";
     } else if (name === "hold") {
       scale = MAX_SCALE;
-      fillColor = useColor ? lerpColor(colors.holdStart, colors.holdEnd, t) : colors.accent;
-      // Fortschrittsring einmal komplett herum
+      // Füllung Gelb, innen umlaufender Timer-Ring in Orange (zwei Farben, gleiche Familie)
+      fillColor = useColor ? colors.holdStart : colors.accent;
       ring.style.opacity = "1";
-      ring.style.stroke = useColor ? lerpColor(colors.holdStart, colors.holdEnd, t) : colors.accent;
+      ring.style.stroke = useColor ? colors.holdEnd : colors.accent;
       ring.style.strokeDashoffset = (RING_CIRCUMFERENCE * (1 - t)).toFixed(2);
     } else { // exhale
       scale = MAX_SCALE - (MAX_SCALE - MIN_SCALE) * easeInOut(t);
@@ -293,7 +305,6 @@
     document.getElementById("setTheme").value = settings.theme;
     document.getElementById("setSound").checked = settings.sound;
     document.getElementById("setColor").checked = settings.colorAnimation;
-    document.getElementById("setVibration").checked = settings.vibration;
     document.getElementById("setPhaseText").checked = settings.phaseText;
     document.getElementById("setCounter").checked = settings.cycleCounter;
     document.getElementById("setAutoStop").value = String(settings.autoStopCycles);
@@ -308,9 +319,6 @@
     });
     document.getElementById("setColor").addEventListener("change", function (e) {
       settings.colorAnimation = e.target.checked; saveSettings();
-    });
-    document.getElementById("setVibration").addEventListener("change", function (e) {
-      settings.vibration = e.target.checked; saveSettings(); if (settings.vibration) vibrate(15);
     });
     document.getElementById("setPhaseText").addEventListener("change", function (e) {
       settings.phaseText = e.target.checked; saveSettings(); applyDisplayToggles();
