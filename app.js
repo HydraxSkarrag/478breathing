@@ -169,10 +169,10 @@
       // dark -> brighter (air flowing in), volume swells
       filter.frequency.setValueAtTime(420, now);
       filter.frequency.linearRampToValueAtTime(1150, now + dur);
-      g.gain.linearRampToValueAtTime(peak, now + dur * 0.5);
-      g.gain.setValueAtTime(peak, now + dur * 0.85); // stays present almost to the end
-      // smooth exponential fade right at the end (gentle hand-off to the hold)
-      g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      g.gain.linearRampToValueAtTime(peak, now + dur * 0.3);
+      g.gain.setValueAtTime(peak, now + dur * 0.92); // full volume nearly to the end (audible the whole 4 s)
+      // short, gentle fade only in the final moment (hand-off to the silent hold)
+      g.gain.linearRampToValueAtTime(0.0001, now + dur);
     } else {
       // brighter -> darker (air flowing out), long fade-out
       filter.frequency.setValueAtTime(1050, now);

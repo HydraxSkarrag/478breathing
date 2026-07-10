@@ -53,6 +53,20 @@ Optional **variables** (not secrets):
 If the secrets are missing the workflow does not fail — it skips the deploy with a warning.
 Tested against all-inkl (FTPS), but works with any standard FTP/FTPS host.
 
+## Sharing
+
+The page ships with Open Graph / Twitter card tags and a share image
+([`og-image.png`](og-image.png), 1200×630), so links unfurl nicely on social media.
+If you host it on a different domain, update the absolute URLs in the `og:*` / `twitter:*`
+meta tags in [`index.html`](index.html) and the URL text baked into the image.
+
+Suggested captions:
+
+- **DE:** „4-7-8-Atmung zum Runterkommen: 4 Sekunden einatmen, 7 halten, 8 ausatmen. Ein
+  Kreis führt dich – ganz ohne Anmeldung, mit optionalem Ton. 🫁 https://478breathing.hydrax.org"
+- **EN:** "Calm down with 4-7-8 breathing: inhale 4s, hold 7s, exhale 8s. A single circle
+  guides you — no sign-up, optional sound. 🫁 https://478breathing.hydrax.org"
+
 ## License
 
 [MIT](LICENSE)
