@@ -1,27 +1,27 @@
 /* ---------------------------------------------------------------------------
-   4-7-8 Atmung — minimalistisches Stylesheet
-   Farben über CSS-Variablen; System-, Hell- und Dunkelmodus.
+   4-7-8 breathing — minimalist stylesheet
+   Colors via CSS variables; system, light and dark mode.
 --------------------------------------------------------------------------- */
 
 :root {
-  /* Hell (Default) */
-  --bg: #f4f6f8;
+  /* Light (default) — soft off-white, not a glaring pure white */
+  --bg: #e9ecef;
   --fg: #3a4048;
-  --muted: #9aa4ae;
-  --panel-bg: #ffffff;
-  --panel-border: #e4e8ec;
+  --muted: #838d99;
+  --panel-bg: #fbfcfd;
+  --panel-border: #dde2e7;
   --track: rgba(0, 0, 0, 0.06);
 
-  /* Phasenfarben */
-  --c-inhale: #7fb77e;     /* Einatmen – beruhigendes Grün */
-  --c-hold-start: #ecd68f; /* Halten – sanftes Gelb ... */
-  --c-hold-end: #f2994a;   /* ... innerer Timer-Ring in Orange */
-  --c-exhale: #6fa8dc;     /* Ausatmen – beruhigendes Blau */
-  --c-idle: #c8d0d8;       /* Ruhezustand */
-  --accent: #8a94a0;       /* monochrom, wenn Farbwechsel aus */
+  /* Phase colors */
+  --c-inhale: #7fb77e;     /* inhale – calming green */
+  --c-hold-start: #ecd68f; /* hold – soft yellow fill ... */
+  --c-hold-end: #f2994a;   /* ... inner timer ring in orange */
+  --c-exhale: #6fa8dc;     /* exhale – calming blue */
+  --c-idle: #c8d0d8;       /* idle state */
+  --accent: #8a94a0;       /* monochrome when color change is off */
 }
 
-/* Dunkel per System-Einstellung (nur wenn nicht explizit auf Hell gestellt) */
+/* Dark via system setting (only when not explicitly set to light) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0e1116;
@@ -39,7 +39,7 @@
   }
 }
 
-/* Dunkel explizit erzwungen */
+/* Dark forced explicitly */
 :root[data-theme="dark"] {
   --bg: #0e1116;
   --fg: #c4ccd4;
@@ -75,7 +75,7 @@ body {
   transition: background-color 0.6s ease, color 0.6s ease;
 }
 
-/* --- Bühne mit dem Kreis --- */
+/* --- Stage with the circle --- */
 .stage {
   flex: 1;
   display: flex;
@@ -119,11 +119,11 @@ body {
   transform-box: fill-box;
   transform-origin: center;
   transform: scale(0.35);
-  /* Mini-Transition beim Farbwechsel zwischen den Phasen */
+  /* small transition for the color change between phases */
   transition: fill 0.5s ease;
 }
 
-/* Sanftes Zurückgleiten beim Beenden */
+/* Gentle glide back to idle when stopping */
 .breath.smooth .fill { transition: transform 0.8s ease, fill 0.8s ease; }
 
 .ring {
@@ -132,8 +132,8 @@ body {
   stroke-width: 5;
   stroke-linecap: round;
   opacity: 0;
-  /* Genau am Rand (r = 77.5, Außenkante bündig mit Füllung r = 80).
-     Umfang 2·π·77.5 ≈ 486.95; Start oben (−90°) */
+  /* Exactly on the rim (r = 77.5, outer edge flush with the fill r = 80).
+     Circumference 2·π·77.5 ≈ 486.95; starts at the top (−90°) */
   stroke-dasharray: 486.95;
   stroke-dashoffset: 486.95;
   transform: rotate(-90deg);
@@ -141,7 +141,7 @@ body {
   transition: opacity 0.4s ease;
 }
 
-/* --- Steuer-Icons (Play/Stopp) --- */
+/* --- Control icons (play/stop) --- */
 .ctrl-icon {
   position: absolute;
   width: 16%;
@@ -156,12 +156,12 @@ body {
 .play-icon { opacity: 0.9; }
 .stop-icon { opacity: 0; }
 
-/* Während des Laufens: Play verbergen, Stopp nur bei Hover/Fokus zeigen */
+/* While running: hide play, show stop only on hover/focus */
 .stage.running .play-icon { opacity: 0; }
 .stage.running .breath:hover .stop-icon,
 .stage.running .breath:focus-visible .stop-icon { opacity: 0.85; }
 
-/* --- Phasen-Text (zentriert über der farbigen Füllung, in beiden Modi lesbar) --- */
+/* --- Phase label (centered over the colored fill, readable in both modes) --- */
 .phase-text {
   position: absolute;
   font-size: clamp(0.85rem, 2.6vw, 1.1rem);
@@ -174,11 +174,11 @@ body {
   transition: opacity 0.4s ease;
 }
 .stage.running.show-phase .phase-text { opacity: 0.85; }
-/* Beim Hover/Fokus weicht der Text dem Stopp-Icon (keine Überlagerung) */
+/* On hover/focus the label yields to the stop icon (no overlap) */
 .stage.running.show-phase .breath:hover .phase-text,
 .stage.running.show-phase .breath:focus-visible .phase-text { opacity: 0; }
 
-/* --- Zyklus-Zähler --- */
+/* --- Cycle counter --- */
 .counter {
   min-height: 1.2em;
   font-size: 0.85rem;
@@ -189,7 +189,7 @@ body {
 }
 .stage.running.show-counter .counter { opacity: 1; }
 
-/* --- Zahnrad --- */
+/* --- Settings gear --- */
 .settings-toggle {
   position: fixed;
   top: max(0.9rem, env(safe-area-inset-top));
@@ -201,7 +201,7 @@ body {
   padding: 8px;
   cursor: pointer;
   color: var(--muted);
-  opacity: 0.4;
+  opacity: 0.55;
   transition: opacity 0.25s ease, transform 0.4s ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -210,7 +210,7 @@ body {
 .settings-toggle[aria-expanded="true"] { opacity: 0.9; transform: rotate(30deg); }
 .settings-toggle svg { width: 100%; height: 100%; fill: currentColor; }
 
-/* --- Einstellungs-Panel --- */
+/* --- Settings panel --- */
 .settings-panel {
   position: fixed;
   top: max(3.4rem, calc(env(safe-area-inset-top) + 3rem));
@@ -255,7 +255,7 @@ body {
   cursor: pointer;
 }
 
-/* Schalter */
+/* Toggle switch */
 .switch-row { cursor: pointer; }
 .switch {
   appearance: none;
@@ -285,7 +285,7 @@ body {
 .switch:checked::after { transform: translateX(18px); }
 .switch:focus-visible { outline: 2px solid var(--muted); outline-offset: 2px; }
 
-/* --- Fußzeile --- */
+/* --- Footer --- */
 .footer {
   position: fixed;
   bottom: max(0.7rem, env(safe-area-inset-bottom));
@@ -294,7 +294,7 @@ body {
   text-align: center;
   font-size: 0.9rem;
   color: var(--muted);
-  opacity: 0.5;
+  opacity: 0.65;
   transition: opacity 0.25s ease;
 }
 .footer:hover { opacity: 0.9; }
@@ -302,7 +302,7 @@ body {
 .footer a:hover { text-decoration: underline; }
 .footer span { margin: 0 0.4em; }
 
-/* --- Rechtstext-Seiten (impressum/datenschutz) --- */
+/* --- Legal pages (impressum/datenschutz) --- */
 .legal {
   overflow: auto;
   display: block;
