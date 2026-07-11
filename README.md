@@ -17,6 +17,8 @@ icon) to end it. The interface is in German; the site targets a German-speaking 
   phase (e.g. gusty wind, rain, a warm pad, an om-like hum, a deeper duller exhale, a
   temple bell, harp or wind chimes). Every breath sound is directional: it rises with the
   inhale and sinks with the exhale.
+- **Explainer page** ([`technik.html`](technik.html), bilingual DE/EN): what the 4-7-8
+  technique is, how to do it and what it can help with, linked from the footer.
 - **Optional extras** (all toggleable): phase label, cycle counter, auto-stop after N rounds.
 - **Theme:** system / light / dark. **Color animation can be disabled** (monochrome).
 - **Screen stays awake** during a session (Screen Wake Lock API).
