@@ -11,8 +11,12 @@ icon) to end it. The interface is in German; the site targets a German-speaking 
 - **Circle animation:** grows while inhaling (green), stays large while holding with a
   progress ring tracing the rim once (yellow fill, orange ring), shrinks while exhaling (blue).
 - **Synthesized sound** (Web Audio, off by default): a soft "ocean breath" that swells on
-  the inhale and ebbs on the exhale, silence while holding, plus a gentle singing-bowl
-  chime when a session ends via auto-stop. No audio files — everything is generated in the browser.
+  the inhale and ebbs on the exhale, silence while holding, plus a soft gong when a session
+  ends via auto-stop. No audio files — everything is generated in the browser. A separate
+  **sound page** ([`sound.html`](sound.html)) lets you pick and preview a different sound per
+  phase (e.g. gusty wind, rain, a warm pad, an om-like hum, a deeper duller exhale, a
+  temple bell, harp or wind chimes). Every breath sound is directional: it rises with the
+  inhale and sinks with the exhale.
 - **Optional extras** (all toggleable): phase label, cycle counter, auto-stop after N rounds.
 - **Theme:** system / light / dark. **Color animation can be disabled** (monochrome).
 - **Screen stays awake** during a session (Screen Wake Lock API).

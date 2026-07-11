@@ -39,6 +39,7 @@ jobs:
           find . -name '*.html' -not -path './.git/*' -not -path './.github/*' -print0 \
             | xargs -0 sed -i \
               -e "s#\(styles\.css\)\"#\1?v=${VER}\"#g" \
+              -e "s#\(audio\.js\)\"#\1?v=${VER}\"#g" \
               -e "s#\(app\.js\)\"#\1?v=${VER}\"#g"
           echo "Stamped CSS/JS with ?v=${VER}"
 

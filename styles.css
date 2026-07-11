@@ -302,6 +302,108 @@ body {
 .footer a:hover { text-decoration: underline; }
 .footer span { margin: 0 0.4em; }
 
+/* Link row inside the settings panel (e.g. "Adjust sounds …") */
+.row-link {
+  color: var(--c-exhale);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+.row-link:hover { text-decoration: underline; }
+
+/* --- Sound settings page (sound.html) --- */
+.sound-page .snd-intro {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin: 0.2rem 0 2rem;
+}
+.snd-section { margin-bottom: 2.2rem; }
+.snd-section h2 {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.6rem;
+}
+
+.snd-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.55rem;
+  background: var(--panel-bg);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.snd-option.selected { border-color: var(--c-inhale); }
+
+/* The clickable label area doubles as the radio */
+.snd-pick {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: none;
+  border: none;
+  padding: 0.15rem 0;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+.snd-radio {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+  position: relative;
+  transition: border-color 0.2s ease;
+}
+.snd-option.selected .snd-radio { border-color: var(--c-inhale); }
+.snd-option.selected .snd-radio::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--c-inhale);
+}
+.snd-text { display: flex; flex-direction: column; gap: 0.1rem; }
+.snd-name { font-size: 0.98rem; }
+.snd-desc { font-size: 0.82rem; color: var(--muted); }
+.snd-pick:focus-visible { outline: 2px solid var(--muted); outline-offset: 3px; border-radius: 8px; }
+
+/* Preview (▶) button */
+.snd-test {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--panel-border);
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+.snd-test svg { width: 16px; height: 16px; fill: currentColor; }
+.snd-test:hover:not(:disabled) { background: var(--panel-bg); }
+.snd-test:disabled { cursor: default; opacity: 0.35; }
+.snd-test.playing {
+  opacity: 1;
+  border-color: var(--c-inhale);
+  color: var(--c-inhale);
+  animation: snd-pulse 1.2s ease-in-out infinite;
+}
+.snd-test:focus-visible { outline: 2px solid var(--muted); outline-offset: 2px; }
+@keyframes snd-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
 /* --- Legal pages (impressum/datenschutz) --- */
 .legal {
   overflow: auto;

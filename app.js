@@ -11,6 +11,9 @@
     lang: "de",          // de | en (German is the default)
     theme: "system",     // system | light | dark
     sound: false,        // off by default
+    soundInhale: "ocean", // inhale sound variant (see audio.js)
+    soundExhale: "ocean", // exhale sound variant
+    soundEnd: "gong",     // session-end sound variant (auto-stop)
     colorAnimation: true,
     phaseText: false,
     cycleCounter: true,
@@ -23,7 +26,7 @@
     de: {
       settings_title: "Einstellungen", language: "Sprache", design: "Design",
       opt_system: "System", opt_light: "Hell", opt_dark: "Dunkel",
-      sound: "Ton", color: "Farbwechsel", phaseText: "Phasen-Text",
+      sound: "Ton", soundPage: "Klänge anpassen …", color: "Farbwechsel", phaseText: "Phasen-Text",
       counter: "Zyklus-Zähler", autostop: "Auto-Stopp",
       opt_unlimited: "Unbegrenzt", round: "Runde", rounds: "Runden",
       phase_inhale: "Einatmen", phase_hold: "Halten", phase_exhale: "Ausatmen",
@@ -34,7 +37,7 @@
     en: {
       settings_title: "Settings", language: "Language", design: "Theme",
       opt_system: "System", opt_light: "Light", opt_dark: "Dark",
-      sound: "Sound", color: "Color change", phaseText: "Phase label",
+      sound: "Sound", soundPage: "Adjust sounds …", color: "Color change", phaseText: "Phase label",
       counter: "Cycle counter", autostop: "Auto-stop",
       opt_unlimited: "Unlimited", round: "round", rounds: "rounds",
       phase_inhale: "Inhale", phase_hold: "Hold", phase_exhale: "Exhale",
@@ -110,117 +113,19 @@
   }
 
   /* ======================= Audio ======================= */
-  var audioCtx = null;
-  var master = null;
-
+  // Synthesis lives in the shared BreathAudio module (audio.js); here we only
+  // decide which variant to play per phase and gate it behind the sound toggle.
   function ensureAudio() {
-    if (!settings.sound) return;
-    if (!audioCtx) {
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      audioCtx = new AC();
-      master = audioCtx.createGain();
-      master.gain.value = 0.9;
-      master.connect(audioCtx.destination);
-    }
-    if (audioCtx.state === "suspended") audioCtx.resume();
+    if (settings.sound && window.BreathAudio) window.BreathAudio.resume();
   }
-
-  // Pink-noise buffer (created once), the basis for the "ocean breath".
-  var noiseBuffer = null;
-  function getNoiseBuffer() {
-    if (noiseBuffer) return noiseBuffer;
-    var len = Math.floor(audioCtx.sampleRate * 2);
-    noiseBuffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
-    var d = noiseBuffer.getChannelData(0);
-    var b0 = 0, b1 = 0, b2 = 0; // Paul Kellett approximation for pink noise
-    for (var i = 0; i < len; i++) {
-      var white = Math.random() * 2 - 1;
-      b0 = 0.99765 * b0 + white * 0.0990460;
-      b1 = 0.96300 * b1 + white * 0.2965164;
-      b2 = 0.57000 * b2 + white * 1.0526913;
-      d[i] = (b0 + b1 + b2 + white * 0.1848) * 0.16;
-    }
-    return noiseBuffer;
-  }
-
-  // "Ocean breath": quiet filtered noise that swells on the inhale and ebbs
-  // on the exhale – like breath/waves, without a melody.
   function playBreath(dir, durMs) {
-    if (!settings.sound || !audioCtx) return;
-    var dur = durMs / 1000;
-    var now = audioCtx.currentTime;
-
-    var src = audioCtx.createBufferSource();
-    src.buffer = getNoiseBuffer();
-    src.loop = true;
-
-    var filter = audioCtx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.Q.value = 0.8;
-
-    var g = audioCtx.createGain();
-    src.connect(filter).connect(g).connect(master);
-
-    var peak = 0.11;
-    g.gain.setValueAtTime(0.0001, now);
-
-    if (dir === "in") {
-      // dark -> brighter (air flowing in), volume swells
-      filter.frequency.setValueAtTime(420, now);
-      filter.frequency.linearRampToValueAtTime(1150, now + dur);
-      g.gain.linearRampToValueAtTime(peak, now + dur * 0.3);
-      g.gain.setValueAtTime(peak, now + dur * 0.92); // full volume nearly to the end (audible the whole 4 s)
-      // short, gentle fade only in the final moment (hand-off to the silent hold)
-      g.gain.linearRampToValueAtTime(0.0001, now + dur);
-    } else {
-      // brighter -> darker (air flowing out), long fade-out
-      filter.frequency.setValueAtTime(1050, now);
-      filter.frequency.linearRampToValueAtTime(360, now + dur);
-      g.gain.linearRampToValueAtTime(peak, now + dur * 0.14);
-      g.gain.linearRampToValueAtTime(0.0001, now + dur);
-    }
-
-    src.start(now);
-    src.stop(now + dur + 0.05);
+    if (!settings.sound || !window.BreathAudio) return;
+    if (dir === "in") window.BreathAudio.inhale(settings.soundInhale, durMs);
+    else window.BreathAudio.exhale(settings.soundExhale, durMs);
   }
-
-  // Deep, soft gong rumble for the ending (auto-stop): very low fundamental
-  // with overtones, slow beating (rumble), dark fade-out.
   function playGong() {
-    if (!settings.sound || !audioCtx) return;
-    var now = audioCtx.currentTime;
-    var dur = 9;
-
-    // shared envelope (soft attack, long exponential decay)
-    var env = audioCtx.createGain();
-    env.gain.setValueAtTime(0.0001, now);
-    env.gain.linearRampToValueAtTime(1, now + 0.25);
-    env.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-
-    // filter darkens further as it decays
-    var filter = audioCtx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.Q.value = 0.5;
-    filter.frequency.setValueAtTime(700, now);
-    filter.frequency.linearRampToValueAtTime(200, now + dur);
-    filter.connect(env).connect(master);
-
-    var base = 62; // very low – a rumble you can feel on headphones
-    var partials = [{ f: 1.0, g: 1.0 }, { f: 2.0, g: 0.55 }, { f: 3.0, g: 0.28 }, { f: 4.02, g: 0.12 }];
-    partials.forEach(function (p) {
-      // two slightly detuned voices -> slow beating = soft rumble
-      [0, 1.5].forEach(function (detune) {
-        var osc = audioCtx.createOscillator();
-        var g = audioCtx.createGain();
-        osc.type = "sine";
-        osc.frequency.value = base * p.f + detune;
-        g.gain.value = 0.045 * p.g;
-        osc.connect(g).connect(filter);
-        osc.start(now);
-        osc.stop(now + dur + 0.1);
-      });
-    });
+    if (!settings.sound || !window.BreathAudio) return;
+    window.BreathAudio.end(settings.soundEnd);
   }
 
   /* --- Keep the screen awake (Wake Lock) during a session --- */

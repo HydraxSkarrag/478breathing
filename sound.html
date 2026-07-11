@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#e9ecef" media="(prefers-color-scheme: light)">
+  <meta name="description" content="Klänge der 4-7-8-Atmung anpassen und testen.">
+  <title>Klänge · 4-7-8 Atmung</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Apply the saved theme before paint to avoid a flash -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem("breathe478.settings") || "{}");
+        if (s.theme === "light" || s.theme === "dark") {
+          document.documentElement.setAttribute("data-theme", s.theme);
+        }
+        if (s.lang === "en") document.documentElement.lang = "en";
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="legal sound-page">
+  <div class="content">
+    <a class="back" href="index.html" id="backLink">← Zurück</a>
+    <h1 id="pageTitle">Klänge</h1>
+    <p class="snd-intro" id="pageIntro">Wähle für jede Phase einen Klang. Mit ▶ hörst du ihn probeweise – unabhängig davon, ob der Ton auf der Startseite an ist.</p>
+
+    <div id="sections"></div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      var STORAGE_KEY = "breathe478.settings";
+
+      var defaults = { lang: "de", soundInhale: "ocean", soundExhale: "ocean", soundEnd: "gong" };
+      var settings = {};
+      for (var k in defaults) settings[k] = defaults[k];
+      try {
+        var raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        for (var key in defaults) if (raw[key] !== undefined) settings[key] = raw[key];
+      } catch (e) {}
+
+      function save() {
+        try {
+          var current = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          current.soundInhale = settings.soundInhale;
+          current.soundExhale = settings.soundExhale;
+          current.soundEnd = settings.soundEnd;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+        } catch (e) {}
+      }
+
+      var de = settings.lang !== "en";
+
+      // Page-level strings
+      var STR = {
+        back:  de ? "← Zurück" : "← Back",
+        title: de ? "Klänge"   : "Sounds",
+        intro: de
+          ? "Wähle für jede Phase einen Klang. Mit ▶ hörst du ihn probeweise – unabhängig davon, ob der Ton auf der Startseite an ist."
+          : "Pick a sound for each phase. Use ▶ to preview it – regardless of whether sound is on the start page.",
+        test:  de ? "Anhören" : "Preview"
+      };
+
+      // Section + variant config. `test` is how long the preview button locks.
+      var SECTIONS = [
+        {
+          key: "soundInhale", kind: "inhale", test: 4000,
+          title: de ? "Einatmen (4 s)" : "Inhale (4 s)",
+          variants: [
+            { id: "ocean", name: de ? "Ozean" : "Ocean", desc: de ? "Tiefes, weiches Rauschen, das anschwillt." : "Deep, soft noise that swells." },
+            { id: "wind",  name: de ? "Wind"  : "Wind",  desc: de ? "Heller, pfeifender Luftzug mit Böen, der ansteigt." : "A bright, whistling draft with gusts, rising." },
+            { id: "rain",  name: de ? "Regen" : "Rain",  desc: de ? "Feines Prasseln, das dichter wird." : "A fine patter growing denser." },
+            { id: "pad",   name: de ? "Pad"   : "Pad",   desc: de ? "Warmer Flächenklang, der sich öffnet." : "A warm pad opening up." },
+            { id: "om",    name: de ? "Om"    : "Om",    desc: de ? "Stimmartiges Summen, das ansteigt und sich öffnet." : "A voice-like hum that rises and opens." },
+            { id: "off",   name: de ? "Aus"   : "Off",   desc: de ? "Kein Klang." : "No sound." }
+          ]
+        },
+        {
+          key: "soundExhale", kind: "exhale", test: 8000,
+          title: de ? "Ausatmen (8 s)" : "Exhale (8 s)",
+          variants: [
+            { id: "ocean", name: de ? "Ozean" : "Ocean", desc: de ? "Tiefes, weiches Rauschen, das verebbt." : "Deep, soft noise that ebbs away." },
+            { id: "wind",  name: de ? "Wind"  : "Wind",  desc: de ? "Heller, pfeifender Luftzug, der absinkt und verweht." : "A bright, whistling draft that sinks and drifts away." },
+            { id: "deep",  name: de ? "Tief"  : "Deep",  desc: de ? "Dunkler und dumpfer, mit tiefem Nachklang." : "Darker and duller, with a low undertone." },
+            { id: "rain",  name: de ? "Regen" : "Rain",  desc: de ? "Feines Prasseln, das sich verzieht." : "A fine patter thinning out." },
+            { id: "pad",   name: de ? "Pad"   : "Pad",   desc: de ? "Warmer Flächenklang, der sich senkt." : "A warm pad that settles down." },
+            { id: "om",    name: de ? "Om"    : "Om",    desc: de ? "Stimmartiges Summen, das absinkt und sich schließt." : "A voice-like hum that sinks and closes." },
+            { id: "off",   name: de ? "Aus"   : "Off",   desc: de ? "Kein Klang." : "No sound." }
+          ]
+        },
+        {
+          key: "soundEnd", kind: "end", test: 5000,
+          title: de ? "Abschluss (bei Auto-Stopp)" : "Ending (on auto-stop)",
+          variants: [
+            { id: "gong",      name: de ? "Gong"         : "Gong",         desc: de ? "Tiefes, weiches Wummern." : "A deep, soft rumble." },
+            { id: "bowl",      name: de ? "Klangschale"  : "Singing bowl", desc: de ? "Heller, langer Nachklang." : "A brighter, ringing decay." },
+            { id: "bell",      name: de ? "Tempelglocke" : "Temple bell",  desc: de ? "Ein einzelner, tiefer Schlag." : "A single, low strike." },
+            { id: "harp",      name: de ? "Harfe"        : "Harp",         desc: de ? "Sanfte, absteigende Tonfolge." : "A gentle descending figure." },
+            { id: "windchime", name: de ? "Windspiel"    : "Wind chimes",  desc: de ? "Zarte, zufällige Klänge." : "Delicate, random notes." },
+            { id: "off",       name: de ? "Aus"          : "Off",          desc: de ? "Kein Klang." : "No sound." }
+          ]
+        }
+      ];
+
+      // Apply page strings
+      document.documentElement.lang = de ? "de" : "en";
+      document.getElementById("backLink").textContent = STR.back;
+      document.getElementById("pageTitle").textContent = STR.title;
+      document.getElementById("pageIntro").textContent = STR.intro;
+      document.title = STR.title + " · 4-7-8 " + (de ? "Atmung" : "Breathing");
+
+      function preview(kind, variant, durMs) {
+        if (!window.BreathAudio) return;
+        window.BreathAudio.resume();
+        if (kind === "inhale") window.BreathAudio.inhale(variant, durMs);
+        else if (kind === "exhale") window.BreathAudio.exhale(variant, durMs);
+        else window.BreathAudio.end(variant);
+      }
+
+      var container = document.getElementById("sections");
+
+      SECTIONS.forEach(function (sec) {
+        // saved variant no longer offered (e.g. removed in an update)?
+        // -> fall back to the default (first entry), matching playback behavior
+        var known = sec.variants.some(function (v) { return v.id === settings[sec.key]; });
+        if (!known) settings[sec.key] = sec.variants[0].id;
+
+        var wrap = document.createElement("section");
+        wrap.className = "snd-section";
+        var h = document.createElement("h2");
+        h.textContent = sec.title;
+        wrap.appendChild(h);
+
+        sec.variants.forEach(function (v) {
+          var row = document.createElement("div");
+          row.className = "snd-option" + (settings[sec.key] === v.id ? " selected" : "");
+          row.setAttribute("data-variant", v.id);
+
+          var pick = document.createElement("button");
+          pick.type = "button";
+          pick.className = "snd-pick";
+          pick.setAttribute("role", "radio");
+          pick.setAttribute("aria-checked", settings[sec.key] === v.id ? "true" : "false");
+          pick.innerHTML =
+            '<span class="snd-radio" aria-hidden="true"></span>' +
+            '<span class="snd-text"><span class="snd-name"></span>' +
+            '<span class="snd-desc"></span></span>';
+          pick.querySelector(".snd-name").textContent = v.name;
+          pick.querySelector(".snd-desc").textContent = v.desc;
+
+          pick.addEventListener("click", function () {
+            settings[sec.key] = v.id;
+            save();
+            var opts = wrap.querySelectorAll(".snd-option");
+            for (var i = 0; i < opts.length; i++) {
+              var on = opts[i] === row;
+              opts[i].classList.toggle("selected", on);
+              opts[i].querySelector(".snd-pick").setAttribute("aria-checked", on ? "true" : "false");
+            }
+          });
+
+          var test = document.createElement("button");
+          test.type = "button";
+          test.className = "snd-test";
+          test.setAttribute("aria-label", STR.test + ": " + v.name);
+          test.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>';
+          if (v.id === "off") test.disabled = true;
+
+          test.addEventListener("click", function () {
+            if (test.disabled) return;
+            preview(sec.kind, v.id, sec.test);
+            test.classList.add("playing");
+            test.disabled = true;
+            setTimeout(function () {
+              test.classList.remove("playing");
+              test.disabled = false;
+            }, sec.test);
+          });
+
+          row.appendChild(pick);
+          row.appendChild(test);
+          wrap.appendChild(row);
+        });
+
+        container.appendChild(wrap);
+      });
+    })();
+  </script>
+</body>
+</html>
