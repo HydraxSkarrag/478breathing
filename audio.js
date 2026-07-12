@@ -262,33 +262,40 @@
   /*  End-of-session variants (played on auto-stop)                         */
   /* --------------------------------------------------------------------- */
 
-  // Deep, soft gong rumble: very low fundamental with overtones, slow beating,
-  // dark fade-out. A rumble you can feel on headphones.
+  // Deep, soft gong: a very low fundamental for body on headphones, but with
+  // enough mid overtones (~250-500 Hz) that tiny phone speakers still render
+  // it clearly – small speakers roll off almost everything below ~300 Hz.
   function endGong() {
     var now = ctx.currentTime;
     var dur = 9;
 
     var env = ctx.createGain();
     env.gain.setValueAtTime(0.0001, now);
-    env.gain.linearRampToValueAtTime(1, now + 0.25);
+    env.gain.linearRampToValueAtTime(1, now + 0.2);
     env.gain.exponentialRampToValueAtTime(0.0001, now + dur);
 
+    // opened up so the mid overtones actually pass through (still darkens as it decays)
     var filter = ctx.createBiquadFilter();
     filter.type = "lowpass";
     filter.Q.value = 0.5;
-    filter.frequency.setValueAtTime(700, now);
-    filter.frequency.linearRampToValueAtTime(200, now + dur);
+    filter.frequency.setValueAtTime(1700, now);
+    filter.frequency.linearRampToValueAtTime(550, now + dur);
     filter.connect(env).connect(master);
 
     var base = 62;
-    var partials = [{ f: 1.0, g: 1.0 }, { f: 2.0, g: 0.55 }, { f: 3.0, g: 0.28 }, { f: 4.02, g: 0.12 }];
+    // richer overtone series: the higher partials (4x-8x = ~250-500 Hz) carry
+    // the sound on phone speakers, the low ones give body on headphones
+    var partials = [
+      { f: 1.0, g: 0.9 }, { f: 2.0, g: 0.7 }, { f: 3.0, g: 0.6 },
+      { f: 4.02, g: 0.5 }, { f: 5.05, g: 0.38 }, { f: 6.1, g: 0.24 }, { f: 8.15, g: 0.13 }
+    ];
     partials.forEach(function (p) {
       [0, 1.5].forEach(function (detune) { // two detuned voices -> slow beating
         var osc = ctx.createOscillator();
         var g = ctx.createGain();
         osc.type = "sine";
         osc.frequency.value = base * p.f + detune;
-        g.gain.value = 0.045 * p.g;
+        g.gain.value = 0.042 * p.g;
         osc.connect(g).connect(filter);
         osc.start(now);
         osc.stop(now + dur + 0.1);
