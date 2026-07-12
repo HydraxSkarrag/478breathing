@@ -426,6 +426,8 @@ body {
   font-size: 0.9rem;
 }
 .legal .back:hover { text-decoration: underline; }
+.legal ul.links { list-style: none; padding: 0; }
+.legal ul.links li { margin: 0.5rem 0; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: 0.001ms !important; }

@@ -31,7 +31,7 @@
       opt_unlimited: "Unbegrenzt", round: "Runde", rounds: "Runden",
       phase_inhale: "Einatmen", phase_hold: "Halten", phase_exhale: "Ausatmen",
       aria_start: "Atmung starten", aria_stop: "Atmung beenden", aria_settings: "Einstellungen",
-      about: "Die 478 Technik", imprint: "Impressum", privacy: "Datenschutz",
+      about: "Die 478 Technik", aboutProject: "Über", imprint: "Impressum", privacy: "Datenschutz",
       roundLabel: function (n) { return n + ". Runde"; }
     },
     en: {
@@ -42,7 +42,7 @@
       opt_unlimited: "Unlimited", round: "round", rounds: "rounds",
       phase_inhale: "Inhale", phase_hold: "Hold", phase_exhale: "Exhale",
       aria_start: "Start breathing", aria_stop: "Stop breathing", aria_settings: "Settings",
-      about: "The 478 technique", imprint: "Imprint", privacy: "Privacy",
+      about: "The 478 technique", aboutProject: "About", imprint: "Imprint", privacy: "Privacy",
       roundLabel: function (n) { return "Round " + n; }
     }
   };
