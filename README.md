@@ -14,9 +14,9 @@ icon) to end it. The interface is in German; the site targets a German-speaking 
   the inhale and ebbs on the exhale, silence while holding, plus a soft gong when a session
   ends via auto-stop. No audio files — everything is generated in the browser. A separate
   **sound page** ([`sound.html`](sound.html)) lets you pick and preview a different sound per
-  phase (e.g. gusty wind, rain, a warm pad, an om-like hum, a deeper duller exhale, a
-  temple bell, harp or wind chimes). Every breath sound is directional: it rises with the
-  inhale and sinks with the exhale.
+  phase (e.g. gusty wind, rain, a warm pad, a deeper duller exhale, a temple bell, harp or
+  wind chimes). Every breath sound is directional: it rises with the inhale and sinks with
+  the exhale.
 - **Explainer page** ([`technik.html`](technik.html), bilingual DE/EN): what the 4-7-8
   technique is, how to do it and what it can help with, linked from the footer.
 - **Optional extras** (all toggleable): phase label, cycle counter, auto-stop after N rounds.

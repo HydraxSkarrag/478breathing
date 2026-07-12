@@ -138,70 +138,6 @@
     });
   }
 
-  // "Om": a voice-like hum – detuned saws through two formant band-passes
-  // (the vowel color) plus a sine for body. The vowel opens on the inhale
-  // and closes towards a hummed "m" on the exhale.
-  function breathOm(dir, durMs) {
-    var dur = durMs / 1000;
-    var now = ctx.currentTime;
-
-    var g = ctx.createGain();
-    var lp = ctx.createBiquadFilter();
-    lp.type = "lowpass";
-    lp.frequency.value = 1400;
-    g.connect(lp).connect(master);
-    phaseEnv(g, dir, now, dur, 0.07);
-
-    var f1 = ctx.createBiquadFilter();
-    f1.type = "bandpass";
-    f1.Q.value = 5;
-    var f2 = ctx.createBiquadFilter();
-    f2.type = "bandpass";
-    f2.Q.value = 7;
-    var f2g = ctx.createGain();
-    f2g.gain.value = 0.5;
-    f1.connect(g);
-    f2.connect(f2g).connect(g);
-    if (dir === "in") { // m -> o (mouth opens)
-      f1.frequency.setValueAtTime(260, now);
-      f1.frequency.linearRampToValueAtTime(480, now + dur);
-      f2.frequency.setValueAtTime(850, now);
-      f2.frequency.linearRampToValueAtTime(1100, now + dur);
-    } else {            // o -> m (closes into a hum)
-      f1.frequency.setValueAtTime(480, now);
-      f1.frequency.linearRampToValueAtTime(250, now + dur);
-      f2.frequency.setValueAtTime(1100, now);
-      f2.frequency.linearRampToValueAtTime(830, now + dur);
-    }
-
-    // gentle pitch glide underlines the direction: rises in, sinks out
-    var p0 = dir === "in" ? 92 : 104;
-    var p1 = dir === "in" ? 104 : 88;
-
-    [-6, 6].forEach(function (cents) {
-      var osc = ctx.createOscillator();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(p0, now); // around G2 – a low hum
-      osc.frequency.exponentialRampToValueAtTime(p1, now + dur);
-      osc.detune.value = cents;
-      osc.connect(f1);
-      osc.connect(f2);
-      osc.start(now);
-      osc.stop(now + dur + 0.05);
-    });
-
-    // plain sine at the fundamental for chest/body
-    var body = ctx.createOscillator();
-    var bodyG = ctx.createGain();
-    body.type = "sine";
-    body.frequency.setValueAtTime(p0, now);
-    body.frequency.exponentialRampToValueAtTime(p1, now + dur);
-    bodyG.gain.value = 0.6;
-    body.connect(bodyG).connect(g);
-    body.start(now);
-    body.stop(now + dur + 0.05);
-  }
-
   /* --------------------------------------------------------------------- */
   /*  Inhale variants                                                       */
   /* --------------------------------------------------------------------- */
@@ -215,9 +151,7 @@
     // fine patter that grows denser/fuller as the breath comes in
     rain: function (d) { breathNoise("in", d, { type: "highpass", f0: 3400, f1: 2000, peak: 0.2, q: 0.5 }); },
     // warm chord pad swelling behind an opening filter
-    pad: function (d) { breathPad("in", d); },
-    // voice-like hum that rises and opens towards an "o"
-    om: function (d) { breathOm("in", d); }
+    pad: function (d) { breathPad("in", d); }
   };
 
   /* --------------------------------------------------------------------- */
@@ -233,8 +167,6 @@
     rain: function (d) { breathNoise("out", d, { type: "highpass", f0: 2000, f1: 3600, peak: 0.2, q: 0.5 }); },
     // warm chord pad settling behind a closing filter
     pad: function (d) { breathPad("out", d); },
-    // voice-like hum that sinks and closes into an "m"
-    om: function (d) { breathOm("out", d); },
     // requested suggestion: deeper & duller. A darker filter sweep plus a low
     // sine drone underneath that fades away – a heavier, "sinking" exhale.
     deep: function (d) {
@@ -440,8 +372,8 @@
       if (!ensure()) return;
       (pick(END, variant) || END.gong)();
     },
-    INHALE: ["ocean", "wind", "rain", "pad", "om", "off"],
-    EXHALE: ["ocean", "wind", "deep", "rain", "pad", "om", "off"],
+    INHALE: ["ocean", "wind", "rain", "pad", "off"],
+    EXHALE: ["ocean", "wind", "deep", "rain", "pad", "off"],
     END: ["gong", "bowl", "bell", "harp", "windchime", "off"]
   };
 })();
