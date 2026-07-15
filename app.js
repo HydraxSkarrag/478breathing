@@ -35,7 +35,8 @@
       phase_inhale: "Einatmen", phase_hold: "Halten", phase_exhale: "Ausatmen",
       aria_start: "Atmung starten", aria_stop: "Atmung beenden", aria_settings: "Einstellungen",
       about: "Die 478 Technik", aboutProject: "Über", imprint: "Impressum", privacy: "Datenschutz",
-      roundLabel: function (n) { return n + ". Runde"; }
+      roundLabel: function (n) { return n + ". Runde"; },
+      roundOfLabel: function (n, total) { return n + ". von " + total + " Runden"; }
     },
     en: {
       settings_title: "Settings", language: "Language", design: "Theme",
@@ -48,7 +49,8 @@
       phase_inhale: "Inhale", phase_hold: "Hold", phase_exhale: "Exhale",
       aria_start: "Start breathing", aria_stop: "Stop breathing", aria_settings: "Settings",
       about: "The 478 technique", aboutProject: "About", imprint: "Imprint", privacy: "Privacy",
-      roundLabel: function (n) { return "Round " + n; }
+      roundLabel: function (n) { return "Round " + n; },
+      roundOfLabel: function (n, total) { return "Round " + n + " of " + total; }
     }
   };
   function T() { return I18N[settings.lang] || I18N.de; }
@@ -279,8 +281,11 @@
   }
 
   function updateCounter() {
-    // shows the current round from the first one: "1. Runde" / "Round 1", ...
-    counterEl.textContent = T().roundLabel(cycles + 1);
+    // "1. Runde" / "Round 1" — or "1. von 2 Runden" / "Round 1 of 2" when auto-stop is set
+    var t = T();
+    counterEl.textContent = settings.autoStopCycles > 0
+      ? t.roundOfLabel(cycles + 1, settings.autoStopCycles)
+      : t.roundLabel(cycles + 1);
   }
 
   /* ======================= Language ======================= */

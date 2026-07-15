@@ -168,10 +168,20 @@ body {
 .play-icon { opacity: 0.9; }
 .stop-icon { opacity: 0; }
 
-/* While running: hide play, show stop only on hover/focus */
+/* While running: hide the play icon */
 .stage.running .play-icon { opacity: 0; }
-.stage.running .breath:hover .stop-icon,
+/* Keyboard focus always reveals the stop icon */
 .stage.running .breath:focus-visible .stop-icon { opacity: 0.85; }
+/* Pointer devices: reveal the stop icon on hover (guarded so touch devices,
+   where :hover sticks after a tap, don't force it on and hide the phase text) */
+@media (hover: hover) {
+  .stage.running .breath:hover .stop-icon { opacity: 0.85; }
+}
+/* Touch devices have no hover: show a faint persistent stop hint, but only when
+   the phase text isn't occupying the center */
+@media (hover: none) {
+  .stage.running:not(.show-phase) .stop-icon { opacity: 0.5; }
+}
 
 /* --- Phase label (centered over the colored fill, readable in both modes) --- */
 .phase-text {
@@ -186,9 +196,12 @@ body {
   transition: opacity 0.4s ease;
 }
 .stage.running.show-phase .phase-text { opacity: 0.85; }
-/* On hover/focus the label yields to the stop icon (no overlap) */
-.stage.running.show-phase .breath:hover .phase-text,
+/* The label yields to the stop icon (no overlap) on keyboard focus, and on
+   hover for pointer devices only — on touch it stays visible after a tap */
 .stage.running.show-phase .breath:focus-visible .phase-text { opacity: 0; }
+@media (hover: hover) {
+  .stage.running.show-phase .breath:hover .phase-text { opacity: 0; }
+}
 
 /* --- Cycle counter --- */
 .counter {
