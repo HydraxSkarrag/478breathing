@@ -174,6 +174,8 @@
     releaseWakeLock();
     stage.classList.remove("running");
     breathBtn.setAttribute("aria-label", T().aria_start);
+    // silence any breath sound still playing; on auto-stop the end sound follows
+    if (window.BreathAudio) window.BreathAudio.cancel();
     if (auto) playGong();
     // gently glide back to the idle state
     breathBtn.classList.add("smooth");

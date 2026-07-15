@@ -18,7 +18,8 @@
   "use strict";
 
   var ctx = null;      // lazily created on the first user gesture
-  var master = null;
+  var finalOut = null; // constant output gain -> destination
+  var master = null;   // replaceable "bus" all voices connect to (so cancel() can mute them)
   var noiseBuffer = null;
 
   // Create the AudioContext (browsers require a user gesture) and resume it.
@@ -27,12 +28,31 @@
       var AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       ctx = new AC();
-      master = ctx.createGain();
-      master.gain.value = 0.9;
-      master.connect(ctx.destination);
+      finalOut = ctx.createGain();
+      finalOut.gain.value = 0.9;
+      finalOut.connect(ctx.destination);
+      master = ctx.createGain(); // the current voice bus
+      master.gain.value = 1;
+      master.connect(finalOut);
     }
     if (ctx.state === "suspended") ctx.resume();
     return ctx;
+  }
+
+  // Stop everything currently sounding: quickly fade the current bus out (no click),
+  // then swap in a fresh bus so any still-scheduled voices stay muted while new
+  // sounds play at full level again.
+  function cancel() {
+    if (!ctx || !master) return;
+    var now = ctx.currentTime;
+    var old = master;
+    old.gain.cancelScheduledValues(now);
+    old.gain.setValueAtTime(old.gain.value, now);
+    old.gain.linearRampToValueAtTime(0.0001, now + 0.12);
+    setTimeout(function () { try { old.disconnect(); } catch (e) {} }, 250);
+    master = ctx.createGain();
+    master.gain.value = 1;
+    master.connect(finalOut);
   }
 
   // Pink-noise buffer (created once) — the basis for the "ocean" / breath sounds.
@@ -360,6 +380,7 @@
 
   window.BreathAudio = {
     resume: function () { return ensure(); },
+    cancel: function () { cancel(); },
     inhale: function (variant, durMs) {
       if (!ensure()) return;
       (pick(INHALE, variant) || INHALE.ocean)(durMs);

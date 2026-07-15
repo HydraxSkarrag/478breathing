@@ -20,7 +20,7 @@ settings); the legal pages (Impressum/Datenschutz) are German only.
   phase (e.g. gusty wind, rain, a warm pad, a deeper duller exhale, a temple bell, harp or
   wind chimes). Every breath sound is directional: it rises with the inhale and sinks with
   the exhale.
-- **Explainer page** ([`technik.html`](technik.html), bilingual DE/EN): what the 4-7-8
+- **Explainer page** ([`technique.html`](technique.html), bilingual DE/EN): what the 4-7-8
   technique is, how to do it and what it can help with, linked from the footer.
 - **Optional extras** (all toggleable): phase label, cycle counter, auto-stop after N rounds.
 - **Theme:** system / light / dark. **Color animation can be disabled** (monochrome).
