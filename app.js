@@ -25,7 +25,9 @@
   /* --- Translations (German/English) --- */
   var I18N = {
     de: {
-      settings_title: "Einstellungen", language: "Sprache", design: "Design",
+      settings_title: "Einstellungen",
+      group_general: "Allgemein", group_sound: "Ton", group_display: "Anzeige", group_session: "Sitzung",
+      language: "Sprache", design: "Design",
       opt_system: "System", opt_light: "Hell", opt_dark: "Dunkel",
       sound: "Ton", soundPage: "Klänge anpassen …", color: "Farbwechsel",
       holdStyle_label: "Halten-Anzeige", opt_dot: "Punkt", opt_ring: "Ring", opt_pulse: "Pulsieren",
@@ -39,7 +41,9 @@
       roundOfLabel: function (n, total) { return n + ". von " + total + " Runden"; }
     },
     en: {
-      settings_title: "Settings", language: "Language", design: "Theme",
+      settings_title: "Settings",
+      group_general: "General", group_sound: "Sound", group_display: "Display", group_session: "Session",
+      language: "Language", design: "Theme",
       opt_system: "System", opt_light: "Light", opt_dark: "Dark",
       sound: "Sound", soundPage: "Adjust sounds …", color: "Color change",
       holdStyle_label: "Hold display", opt_dot: "Dot", opt_ring: "Ring", opt_pulse: "Pulse",

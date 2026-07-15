@@ -269,6 +269,10 @@ body {
   border-top: 1px solid var(--panel-border);
 }
 .row:first-of-type { border-top: none; }
+/* no divider directly under a section heading */
+.settings-panel h2 + .row { border-top: none; }
+/* the first section heading sits flush with the panel's top padding */
+.settings-panel h2:first-child { margin-top: 0.2rem; }
 
 .settings-panel select {
   font: inherit;
