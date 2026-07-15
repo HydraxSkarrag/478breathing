@@ -1,27 +1,28 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#e9ecef" media="(prefers-color-scheme: light)">
-  <meta name="description" content="Minimalistische Unterstützung für die 4-7-8-Atmung: 4 Sekunden einatmen, 7 halten, 8 ausatmen.">
-  <title>4-7-8 Atmung</title>
+  <meta name="description" content="A minimalist guide for 4-7-8 breathing: inhale for 4 seconds, hold for 7, exhale for 8.">
+  <title>4-7-8 Breathing</title>
 
   <!-- Open Graph / social sharing (the domain is rewritten at deploy time via the SITE_URL variable) -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="4-7-8 Atmung">
-  <meta property="og:title" content="4-7-8 Atmung – ruhig durchatmen">
-  <meta property="og:description" content="Eine minimalistische Atem-Hilfe: 4 Sekunden einatmen, 7 halten, 8 ausatmen. Ein Kreis führt dich, mit optionalem Ton.">
+  <meta property="og:site_name" content="4-7-8 Breathing">
+  <meta property="og:title" content="4-7-8 Breathing: breathe calmly">
+  <meta property="og:description" content="A minimalist breathing aid: inhale 4 seconds, hold 7, exhale 8. A single circle guides you, with optional sound.">
   <meta property="og:url" content="https://478breathing.hydrax.org/">
   <meta property="og:image" content="https://478breathing.hydrax.org/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="4-7-8 Atmung – ein Kreis führt durch die Atemtechnik.">
-  <meta property="og:locale" content="de_DE">
+  <meta property="og:image:alt" content="4-7-8 breathing: a circle guides you through the technique.">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="de_DE">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="4-7-8 Atmung – ruhig durchatmen">
-  <meta name="twitter:description" content="Minimalistische Atem-Hilfe: 4 Sekunden einatmen, 7 halten, 8 ausatmen. Ein Kreis führt dich, mit optionalem Ton.">
+  <meta name="twitter:title" content="4-7-8 Breathing: breathe calmly">
+  <meta name="twitter:description" content="A minimalist breathing aid: inhale 4 seconds, hold 7, exhale 8. A single circle guides you, with optional sound.">
   <meta name="twitter:image" content="https://478breathing.hydrax.org/og-image.png">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
@@ -96,8 +97,9 @@
     <label class="row">
       <span data-i18n="holdStyle_label">Halten-Anzeige</span>
       <select id="setHoldStyle">
-        <option value="ring" data-i18n="opt_ring">Ring</option>
         <option value="dot" data-i18n="opt_dot">Punkt</option>
+        <option value="ring" data-i18n="opt_ring">Ring</option>
+        <option value="pulse" data-i18n="opt_pulse">Pulsieren</option>
       </select>
     </label>
 

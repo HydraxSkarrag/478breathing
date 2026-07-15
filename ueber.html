@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -17,7 +17,7 @@
         if (s.theme === "light" || s.theme === "dark") {
           document.documentElement.setAttribute("data-theme", s.theme);
         }
-        if (s.lang === "en") document.documentElement.lang = "en";
+        if (s.lang === "de") document.documentElement.lang = "de";
       } catch (e) {}
     })();
   </script>
@@ -81,8 +81,8 @@
 
   <script>
     (function () {
-      var en = false;
-      try { en = JSON.parse(localStorage.getItem("breathe478.settings") || "{}").lang === "en"; } catch (e) {}
+      var en = true;
+      try { en = JSON.parse(localStorage.getItem("breathe478.settings") || "{}").lang !== "de"; } catch (e) {}
       document.documentElement.lang = en ? "en" : "de";
       document.querySelector('.lang-block[data-lang="de"]').hidden = en;
       document.querySelector('.lang-block[data-lang="en"]').hidden = !en;

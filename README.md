@@ -4,14 +4,15 @@ A deliberately minimalist web page that guides the **4-7-8 breathing technique**
 inhale for 4 seconds, hold for 7, exhale for 8.
 
 The UI is a single circle: tap to start the guided breathing, tap again (or the stop
-icon) to end it. The interface is bilingual (German by default, English switchable in the
+icon) to end it. The interface is bilingual (English by default, German switchable in the
 settings); the legal pages (Impressum/Datenschutz) are German only.
 
 ## Features
 
 - **Circle animation:** grows while inhaling (green), stays large while holding, shrinks while
-  exhaling (blue). The **hold indicator** is switchable in the settings: a progress *ring*
-  tracing the rim once (default), or a *dot* growing from the center until it fills the circle.
+  exhaling (blue). The **hold indicator** is switchable in the settings: a *dot* growing from
+  the center until it fills the circle (default), a progress *ring* tracing the rim once, or a
+  gentle *pulse* (a calm breathing glow, no precise timer).
 - **Synthesized sound** (Web Audio, off by default): a soft "ocean breath" that swells on
   the inhale and ebbs on the exhale, silence while holding, plus a soft gong when a session
   ends via auto-stop. No audio files — everything is generated in the browser. A separate

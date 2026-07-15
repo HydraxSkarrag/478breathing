@@ -8,14 +8,14 @@
   /* --- Settings (stored locally) --- */
   var STORAGE_KEY = "breathe478.settings";
   var defaults = {
-    lang: "de",          // de | en (German is the default)
+    lang: "en",          // en | de (English is the default; German switchable)
     theme: "system",     // system | light | dark
     sound: false,        // off by default
     soundInhale: "ocean", // inhale sound variant (see audio.js)
     soundExhale: "ocean", // exhale sound variant
     soundEnd: "gong",     // session-end sound variant (auto-stop)
     colorAnimation: true,
-    holdStyle: "ring",   // hold indicator: ring (rim timer) | dot (growing center dot)
+    holdStyle: "dot",    // hold indicator: dot (growing center dot) | ring (rim timer) | pulse (gentle breathing)
     phaseText: false,
     cycleCounter: true,
     autoStopCycles: 0    // 0 = unlimited
@@ -28,7 +28,7 @@
       settings_title: "Einstellungen", language: "Sprache", design: "Design",
       opt_system: "System", opt_light: "Hell", opt_dark: "Dunkel",
       sound: "Ton", soundPage: "Klänge anpassen …", color: "Farbwechsel",
-      holdStyle_label: "Halten-Anzeige", opt_ring: "Ring", opt_dot: "Punkt",
+      holdStyle_label: "Halten-Anzeige", opt_dot: "Punkt", opt_ring: "Ring", opt_pulse: "Pulsieren",
       phaseText: "Phasen-Text",
       counter: "Zyklus-Zähler", autostop: "Auto-Stopp",
       opt_unlimited: "Unbegrenzt", round: "Runde", rounds: "Runden",
@@ -41,7 +41,7 @@
       settings_title: "Settings", language: "Language", design: "Theme",
       opt_system: "System", opt_light: "Light", opt_dark: "Dark",
       sound: "Sound", soundPage: "Adjust sounds …", color: "Color change",
-      holdStyle_label: "Hold display", opt_ring: "Ring", opt_dot: "Dot",
+      holdStyle_label: "Hold display", opt_dot: "Dot", opt_ring: "Ring", opt_pulse: "Pulse",
       phaseText: "Phase label",
       counter: "Cycle counter", autostop: "Auto-stop",
       opt_unlimited: "Unlimited", round: "round", rounds: "rounds",
@@ -83,6 +83,7 @@
   var MIN_SCALE = 0.35;
   var MAX_SCALE = 1.0;
   var RING_CIRCUMFERENCE = 2 * Math.PI * 77.5; // ring on the rim, r = 77.5 in the SVG
+  var PULSE_CYCLES = 3; // gentle "breaths" during the hold in pulse mode
 
   /* --- DOM --- */
   var stage = document.getElementById("stage");
@@ -178,6 +179,7 @@
     breathBtn.classList.add("smooth");
     fill.style.transform = "scale(" + MIN_SCALE + ")";
     fill.style.fill = colors.idle;
+    fill.style.opacity = "1"; // reset any pulse dimming
     ring.style.opacity = "0";
     holdDot.style.opacity = "0";
     phaseTextEl.textContent = "";
@@ -230,7 +232,7 @@
   }
 
   function render(name, t) {
-    var scale, fillColor;
+    var scale, fillColor, fillOpacity = 1;
     var useColor = settings.colorAnimation;
 
     if (name === "inhale") {
@@ -242,18 +244,25 @@
       scale = MAX_SCALE;
       fillColor = useColor ? colors.holdStart : colors.accent;
       var progressColor = useColor ? colors.holdEnd : colors.accent;
-      if (settings.holdStyle === "dot") {
-        // orange dot growing from the center until it fills the circle (linear = steady)
-        ring.style.opacity = "0";
-        holdDot.style.opacity = "1";
-        holdDot.style.fill = progressColor;
-        holdDot.style.transform = "scale(" + t.toFixed(4) + ")";
-      } else {
+      if (settings.holdStyle === "ring") {
         // yellow fill, inner sweeping timer ring in orange (two colors, same family)
         holdDot.style.opacity = "0";
         ring.style.opacity = "1";
         ring.style.stroke = progressColor;
         ring.style.strokeDashoffset = (RING_CIRCUMFERENCE * (1 - t)).toFixed(2);
+      } else if (settings.holdStyle === "pulse") {
+        // gentle "breathing" pulse — a calm mood cue, not a precise timer
+        ring.style.opacity = "0";
+        holdDot.style.opacity = "0";
+        var wave = 0.5 - 0.5 * Math.cos(t * PULSE_CYCLES * 2 * Math.PI); // 0..1..0, repeats
+        scale = MAX_SCALE - 0.02 * wave;
+        fillOpacity = 1 - 0.2 * wave;
+      } else {
+        // default: orange dot growing from the center until it fills the circle (linear = steady)
+        ring.style.opacity = "0";
+        holdDot.style.opacity = "1";
+        holdDot.style.fill = progressColor;
+        holdDot.style.transform = "scale(" + t.toFixed(4) + ")";
       }
     } else { // exhale
       scale = MAX_SCALE - (MAX_SCALE - MIN_SCALE) * easeInOut(t);
@@ -264,6 +273,7 @@
 
     fill.style.transform = "scale(" + scale.toFixed(4) + ")";
     fill.style.fill = fillColor;
+    fill.style.opacity = fillOpacity.toFixed(3);
   }
 
   function updateCounter() {
