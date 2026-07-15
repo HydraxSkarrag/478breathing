@@ -21,9 +21,22 @@ jobs:
       FTP_SERVER_DIR: ${{ vars.FTP_SERVER_DIR }}
       # Optional: set to "false" for plain FTP if the host does not support FTPS (default: TLS on).
       FTP_TLS: ${{ vars.FTP_TLS }}
+      # Optional: canonical site URL (no trailing slash). If set, it replaces the default
+      # domain in the Open Graph / Twitter share tags at deploy time.
+      SITE_URL: ${{ vars.SITE_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # Point the social-share tags (og:url, og:image, twitter:image) at the
+      # configured domain. Without SITE_URL the built-in default is kept.
+      - name: Set share URLs
+        if: ${{ env.FTP_SERVER != '' && env.SITE_URL != '' }}
+        run: |
+          BASE="${SITE_URL%/}"
+          find . -name '*.html' -not -path './.git/*' -not -path './.github/*' -print0 \
+            | xargs -0 sed -i "s#https://478breathing\.hydrax\.org#${BASE}#g"
+          echo "Set share URLs to ${BASE}"
 
       - name: Check FTP secrets
         if: ${{ env.FTP_SERVER == '' }}

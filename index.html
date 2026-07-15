@@ -8,7 +8,7 @@
   <meta name="description" content="Minimalistische Unterstützung für die 4-7-8-Atmung: 4 Sekunden einatmen, 7 halten, 8 ausatmen.">
   <title>4-7-8 Atmung</title>
 
-  <!-- Open Graph / social sharing (adjust the URLs if the domain differs) -->
+  <!-- Open Graph / social sharing (the domain is rewritten at deploy time via the SITE_URL variable) -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="4-7-8 Atmung">
   <meta property="og:title" content="4-7-8 Atmung – ruhig durchatmen">
@@ -32,6 +32,9 @@
     <button class="breath" id="breathBtn" type="button" aria-label="Atmung starten">
       <svg class="breath-svg" viewBox="0 0 200 200" aria-hidden="true">
         <circle class="fill" id="fill" cx="100" cy="100" r="80"></circle>
+        <!-- Hold indicator, "dot" style: an orange dot growing from the center until it fills the circle -->
+        <circle class="hold-dot" id="holdDot" cx="100" cy="100" r="80"></circle>
+        <!-- Hold indicator, "ring" style: a timer ring tracing the rim once -->
         <circle class="ring" id="ring" cx="100" cy="100" r="77.5"></circle>
       </svg>
 
@@ -88,6 +91,14 @@
     <label class="row switch-row">
       <span data-i18n="color">Farbwechsel</span>
       <input type="checkbox" id="setColor" class="switch">
+    </label>
+
+    <label class="row">
+      <span data-i18n="holdStyle_label">Halten-Anzeige</span>
+      <select id="setHoldStyle">
+        <option value="ring" data-i18n="opt_ring">Ring</option>
+        <option value="dot" data-i18n="opt_dot">Punkt</option>
+      </select>
     </label>
 
     <label class="row switch-row">

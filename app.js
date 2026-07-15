@@ -15,6 +15,7 @@
     soundExhale: "ocean", // exhale sound variant
     soundEnd: "gong",     // session-end sound variant (auto-stop)
     colorAnimation: true,
+    holdStyle: "ring",   // hold indicator: ring (rim timer) | dot (growing center dot)
     phaseText: false,
     cycleCounter: true,
     autoStopCycles: 0    // 0 = unlimited
@@ -26,7 +27,9 @@
     de: {
       settings_title: "Einstellungen", language: "Sprache", design: "Design",
       opt_system: "System", opt_light: "Hell", opt_dark: "Dunkel",
-      sound: "Ton", soundPage: "Klänge anpassen …", color: "Farbwechsel", phaseText: "Phasen-Text",
+      sound: "Ton", soundPage: "Klänge anpassen …", color: "Farbwechsel",
+      holdStyle_label: "Halten-Anzeige", opt_ring: "Ring", opt_dot: "Punkt",
+      phaseText: "Phasen-Text",
       counter: "Zyklus-Zähler", autostop: "Auto-Stopp",
       opt_unlimited: "Unbegrenzt", round: "Runde", rounds: "Runden",
       phase_inhale: "Einatmen", phase_hold: "Halten", phase_exhale: "Ausatmen",
@@ -37,7 +40,9 @@
     en: {
       settings_title: "Settings", language: "Language", design: "Theme",
       opt_system: "System", opt_light: "Light", opt_dark: "Dark",
-      sound: "Sound", soundPage: "Adjust sounds …", color: "Color change", phaseText: "Phase label",
+      sound: "Sound", soundPage: "Adjust sounds …", color: "Color change",
+      holdStyle_label: "Hold display", opt_ring: "Ring", opt_dot: "Dot",
+      phaseText: "Phase label",
       counter: "Cycle counter", autostop: "Auto-stop",
       opt_unlimited: "Unlimited", round: "round", rounds: "rounds",
       phase_inhale: "Inhale", phase_hold: "Hold", phase_exhale: "Exhale",
@@ -84,6 +89,7 @@
   var breathBtn = document.getElementById("breathBtn");
   var fill = document.getElementById("fill");
   var ring = document.getElementById("ring");
+  var holdDot = document.getElementById("holdDot");
   var phaseTextEl = document.getElementById("phaseText");
   var counterEl = document.getElementById("counter");
   var settingsToggle = document.getElementById("settingsToggle");
@@ -173,6 +179,7 @@
     fill.style.transform = "scale(" + MIN_SCALE + ")";
     fill.style.fill = colors.idle;
     ring.style.opacity = "0";
+    holdDot.style.opacity = "0";
     phaseTextEl.textContent = "";
   }
 
@@ -230,17 +237,29 @@
       scale = MIN_SCALE + (MAX_SCALE - MIN_SCALE) * easeInOut(t);
       fillColor = useColor ? colors.inhale : colors.accent;
       ring.style.opacity = "0";
+      holdDot.style.opacity = "0";
     } else if (name === "hold") {
       scale = MAX_SCALE;
-      // yellow fill, inner sweeping timer ring in orange (two colors, same family)
       fillColor = useColor ? colors.holdStart : colors.accent;
-      ring.style.opacity = "1";
-      ring.style.stroke = useColor ? colors.holdEnd : colors.accent;
-      ring.style.strokeDashoffset = (RING_CIRCUMFERENCE * (1 - t)).toFixed(2);
+      var progressColor = useColor ? colors.holdEnd : colors.accent;
+      if (settings.holdStyle === "dot") {
+        // orange dot growing from the center until it fills the circle (linear = steady)
+        ring.style.opacity = "0";
+        holdDot.style.opacity = "1";
+        holdDot.style.fill = progressColor;
+        holdDot.style.transform = "scale(" + t.toFixed(4) + ")";
+      } else {
+        // yellow fill, inner sweeping timer ring in orange (two colors, same family)
+        holdDot.style.opacity = "0";
+        ring.style.opacity = "1";
+        ring.style.stroke = progressColor;
+        ring.style.strokeDashoffset = (RING_CIRCUMFERENCE * (1 - t)).toFixed(2);
+      }
     } else { // exhale
       scale = MAX_SCALE - (MAX_SCALE - MIN_SCALE) * easeInOut(t);
       fillColor = useColor ? colors.exhale : colors.accent;
       ring.style.opacity = "0";
+      holdDot.style.opacity = "0";
     }
 
     fill.style.transform = "scale(" + scale.toFixed(4) + ")";
@@ -297,6 +316,7 @@
     document.getElementById("setTheme").value = settings.theme;
     document.getElementById("setSound").checked = settings.sound;
     document.getElementById("setColor").checked = settings.colorAnimation;
+    document.getElementById("setHoldStyle").value = settings.holdStyle;
     document.getElementById("setPhaseText").checked = settings.phaseText;
     document.getElementById("setCounter").checked = settings.cycleCounter;
     document.getElementById("setAutoStop").value = String(settings.autoStopCycles);
@@ -314,6 +334,9 @@
     });
     document.getElementById("setColor").addEventListener("change", function (e) {
       settings.colorAnimation = e.target.checked; saveSettings();
+    });
+    document.getElementById("setHoldStyle").addEventListener("change", function (e) {
+      settings.holdStyle = e.target.value; saveSettings();
     });
     document.getElementById("setPhaseText").addEventListener("change", function (e) {
       settings.phaseText = e.target.checked; saveSettings(); applyDisplayToggles();

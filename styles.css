@@ -126,6 +126,18 @@ body {
 /* Gentle glide back to idle when stopping */
 .breath.smooth .fill { transition: transform 0.8s ease, fill 0.8s ease; }
 
+/* Hold indicator, "dot" style: grows from the center to fill the circle.
+   Scale is set per frame in JS; only opacity animates on show/hide. */
+.hold-dot {
+  fill: var(--c-hold-end);
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
 .ring {
   fill: none;
   stroke: var(--c-hold-end);
