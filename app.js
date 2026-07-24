@@ -259,12 +259,12 @@
         ring.style.stroke = progressColor;
         ring.style.strokeDashoffset = (RING_CIRCUMFERENCE * (1 - t)).toFixed(2);
       } else if (settings.holdStyle === "pulse") {
-        // gentle "breathing" pulse — a calm mood cue, not a precise timer
+        // "breathing" pulse — the circle clearly pulses in size (mood cue, not a timer)
         ring.style.opacity = "0";
         holdDot.style.opacity = "0";
         var wave = 0.5 - 0.5 * Math.cos(t * PULSE_CYCLES * 2 * Math.PI); // 0..1..0, repeats
-        scale = MAX_SCALE - 0.02 * wave;
-        fillOpacity = 1 - 0.2 * wave;
+        scale = MAX_SCALE - 0.16 * wave;  // full -> ~0.84 and back, plainly visible
+        fillOpacity = 1 - 0.1 * wave;     // a touch of glow along with the size
       } else {
         // default: orange dot growing from the center until it fills the circle (linear = steady)
         ring.style.opacity = "0";
