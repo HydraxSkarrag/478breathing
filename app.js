@@ -263,7 +263,7 @@
         ring.style.opacity = "0";
         holdDot.style.opacity = "0";
         var wave = 0.5 - 0.5 * Math.cos(t * PULSE_CYCLES * 2 * Math.PI); // 0..1..0, repeats
-        scale = MAX_SCALE - 0.16 * wave;  // full -> ~0.84 and back, plainly visible
+        scale = MAX_SCALE - 0.12 * wave;  // full -> ~0.88 and back, calm but visible
         fillOpacity = 1 - 0.1 * wave;     // a touch of glow along with the size
       } else {
         // default: orange dot growing from the center until it fills the circle (linear = steady)
