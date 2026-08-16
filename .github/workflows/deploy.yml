@@ -28,13 +28,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Point the social-share tags (og:url, og:image, twitter:image) at the
+      # Point the absolute URLs (og:url, og:image, canonical, sitemap) at the
       # configured domain. Without SITE_URL the built-in default is kept.
       - name: Set share URLs
         if: ${{ env.FTP_SERVER != '' && env.SITE_URL != '' }}
         run: |
           BASE="${SITE_URL%/}"
-          find . -name '*.html' -not -path './.git/*' -not -path './.github/*' -print0 \
+          find . \( -name '*.html' -o -name 'sitemap.xml' -o -name 'robots.txt' \) \
+            -not -path './.git/*' -not -path './.github/*' -print0 \
             | xargs -0 sed -i "s#https://478breathing\.hydrax\.org#${BASE}#g"
           echo "Set share URLs to ${BASE}"
 
@@ -49,11 +50,10 @@ jobs:
         if: ${{ env.FTP_SERVER != '' }}
         run: |
           VER="${GITHUB_SHA:0:8}"
+          # every local CSS/JS reference, so new files are covered automatically
           find . -name '*.html' -not -path './.git/*' -not -path './.github/*' -print0 \
-            | xargs -0 sed -i \
-              -e "s#\(styles\.css\)\"#\1?v=${VER}\"#g" \
-              -e "s#\(audio\.js\)\"#\1?v=${VER}\"#g" \
-              -e "s#\(app\.js\)\"#\1?v=${VER}\"#g"
+            | xargs -0 sed -i -E \
+              "s#(src|href)=\"([A-Za-z0-9._-]+\.(css|js))\"#\1=\"\2?v=${VER}\"#g"
           echo "Stamped CSS/JS with ?v=${VER}"
 
       - name: Install lftp

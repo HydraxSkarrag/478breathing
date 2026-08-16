@@ -25,24 +25,49 @@ settings); the legal pages (Impressum/Datenschutz) are German only.
 - **Optional extras** (all toggleable): phase label, cycle counter, auto-stop after N rounds.
 - **Theme:** system / light / dark. **Color animation can be disabled** (monochrome).
 - **Screen stays awake** during a session (Screen Wake Lock API).
+- **Installable and offline capable:** web app manifest plus a small service worker
+  ([`sw.js`](sw.js)), so the page can be added to the home screen and keeps working without a
+  connection (HTML network first, versioned assets cache first).
+- **Accessible and considerate:** the settings panel scrolls on short screens, the sound
+  picker is a proper ARIA radio group, and `prefers-reduced-motion` visibly tames the circle
+  animation instead of only the CSS transitions.
 - **Privacy-friendly:** no cookies, no tracking, no external resources. Settings are stored
   locally in the browser (`localStorage`) only.
 
 Plain HTML/CSS/JS — no dependencies, no build step.
 
+### Files
+
+| File                   | Purpose                                                          |
+| ---------------------- | ---------------------------------------------------------------- |
+| `index.html` / `app.js`| The exercise itself: circle, settings panel, session flow          |
+| `audio.js`             | Shared Web Audio synthesis (`window.BreathAudio`)                  |
+| `page.js`              | Shared bootstrap: theme before first paint, language, `theme-color`|
+| `sound.html` / `sound.js` | Sound picker with previews                                      |
+| `technique.html`, `about.html` | Bilingual content pages (DE/EN)                            |
+| `impressum.html`, `datenschutz.html` | Legal pages (German only)                            |
+| `sw.js`, `site.webmanifest` | Offline support and home-screen install                       |
+
+There are no inline scripts anywhere, which keeps the Content-Security-Policy in
+[`.htaccess`](.htaccess) strict (`script-src 'self'`).
+
 ## Local development
+
+Any static server works, for example:
 
 ```bash
 python3 -m http.server 8000
-# then open http://localhost:8000
 ```
+
+Then open http://localhost:8000. Note that the service worker only registers over
+`http(s)`, and that `.htaccess` (caching, security headers) is applied by Apache only.
 
 ## Deployment (GitHub Actions → any FTP/FTPS host)
 
 Every push to `main` triggers [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml),
 which mirrors the site to any FTP server via `lftp`. Nothing is hard-coded to a specific host —
-just point the secrets at your server. Before uploading it appends `?v=<commit-sha>` to the
-CSS/JS URLs (cache busting) so browsers always fetch the current version after a deploy.
+just point the secrets at your server. Before uploading it appends `?v=<commit-sha>` to every
+local CSS/JS URL (cache busting) so browsers always fetch the current version after a deploy.
 
 Set these secrets under **Settings → Environments → `production`**:
 
@@ -58,7 +83,7 @@ Optional **variables** (not secrets):
 | ---------------- | ------------------------------------------------------------------- |
 | `FTP_SERVER_DIR` | Target directory on the server (e.g. `/example.com/`); defaults to the FTP home |
 | `FTP_TLS`        | Set to `false` for plain FTP if the host doesn't support FTPS (default: TLS on) |
-| `SITE_URL`       | Canonical site URL without trailing slash (e.g. `https://example.com`). If set, it replaces the default domain in the social-share tags at deploy time |
+| `SITE_URL`       | Canonical site URL without trailing slash (e.g. `https://example.com`). If set, it replaces the default domain in the share tags, the canonical links, `sitemap.xml` and `robots.txt` at deploy time |
 
 If the secrets are missing the workflow does not fail — it skips the deploy with a warning.
 Tested against all-inkl (FTPS), but works with any standard FTP/FTPS host.

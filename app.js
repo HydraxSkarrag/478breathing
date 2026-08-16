@@ -57,7 +57,7 @@
       roundOfLabel: function (n, total) { return "Round " + n + " of " + total; }
     }
   };
-  function T() { return I18N[settings.lang] || I18N.de; }
+  function T() { return I18N[settings.lang] || I18N.en; }
 
   function loadSettings() {
     var s = {};
@@ -79,17 +79,31 @@
     catch (e) { /* ignore */ }
   }
 
-  /* --- Phases of the 4-7-8 breath --- */
+  /* --- Phases of the 4-7-8 breath (labels come from I18N) --- */
   var PHASES = [
-    { name: "inhale", label: "Einatmen", duration: 4000 },
-    { name: "hold",   label: "Halten",   duration: 7000 },
-    { name: "exhale", label: "Ausatmen", duration: 8000 }
+    { name: "inhale", duration: 4000 },
+    { name: "hold",   duration: 7000 },
+    { name: "exhale", duration: 8000 }
   ];
 
   var MIN_SCALE = 0.35;
+  var REDUCED_MIN_SCALE = 0.8; // much smaller travel for "prefers-reduced-motion"
   var MAX_SCALE = 1.0;
   var RING_CIRCUMFERENCE = 2 * Math.PI * 77.5; // ring on the rim, r = 77.5 in the SVG
   var PULSE_CYCLES = 3; // gentle "breaths" during the hold in pulse mode
+  var PULSE_AMOUNT = 0.12;
+  var REDUCED_PULSE_AMOUNT = 0.03;
+
+  /* Respect the system's reduced-motion setting: the CSS only tames the
+     transitions, the circle animation itself is driven from here. */
+  var reduceMotion = false;
+  if (window.matchMedia) {
+    var motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    reduceMotion = motionQuery.matches;
+    motionQuery.addEventListener("change", function (e) { reduceMotion = e.matches; });
+  }
+  function minScale() { return reduceMotion ? REDUCED_MIN_SCALE : MIN_SCALE; }
+  function pulseAmount() { return reduceMotion ? REDUCED_PULSE_AMOUNT : PULSE_AMOUNT; }
 
   /* --- DOM --- */
   var stage = document.getElementById("stage");
@@ -143,17 +157,33 @@
 
   /* --- Keep the screen awake (Wake Lock) during a session --- */
   var wakeLock = null;
+  var wakeLockPending = false;
   function requestWakeLock() {
-    if (!("wakeLock" in navigator)) return;
+    // never stack requests: the browser releases the lock on its own when the
+    // page is hidden, and the "release" event puts us back to null
+    if (!("wakeLock" in navigator) || wakeLock || wakeLockPending) return;
+    wakeLockPending = true;
     navigator.wakeLock.request("screen").then(function (wl) {
+      wakeLockPending = false;
       wakeLock = wl;
-    }).catch(function () { /* e.g. tab not visible – ignore */ });
+      wl.addEventListener("release", function () { if (wakeLock === wl) wakeLock = null; });
+    }).catch(function () { wakeLockPending = false; /* e.g. tab not visible – ignore */ });
   }
   function releaseWakeLock() {
     if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
   }
+
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible" && running) requestWakeLock();
+    if (document.visibilityState !== "visible" || !running) return;
+    requestWakeLock();
+    // requestAnimationFrame is paused while the page is hidden, performance.now()
+    // is not. Without this the loop would catch up one phase per frame and fire a
+    // burst of overlapping sounds (plus a jumping counter and an early auto-stop).
+    // Instead we simply restart the phase the user came back to.
+    if (performance.now() - phaseStart > PHASES[phaseIndex].duration) {
+      phaseStart = performance.now();
+      onPhaseEnter(phaseIndex);
+    }
   });
 
   /* ======================= Flow ======================= */
@@ -185,7 +215,7 @@
     if (auto) playGong();
     // gently glide back to the idle state
     breathBtn.classList.add("smooth");
-    fill.style.transform = "scale(" + MIN_SCALE + ")";
+    fill.style.transform = "scale(" + minScale() + ")";
     fill.style.fill = colors.idle;
     fill.style.opacity = "1"; // reset any pulse dimming
     ring.style.opacity = "0";
@@ -242,9 +272,10 @@
   function render(name, t) {
     var scale, fillColor, fillOpacity = 1;
     var useColor = settings.colorAnimation;
+    var low = minScale();
 
     if (name === "inhale") {
-      scale = MIN_SCALE + (MAX_SCALE - MIN_SCALE) * easeInOut(t);
+      scale = low + (MAX_SCALE - low) * easeInOut(t);
       fillColor = useColor ? colors.inhale : colors.accent;
       ring.style.opacity = "0";
       holdDot.style.opacity = "0";
@@ -263,8 +294,8 @@
         ring.style.opacity = "0";
         holdDot.style.opacity = "0";
         var wave = 0.5 - 0.5 * Math.cos(t * PULSE_CYCLES * 2 * Math.PI); // 0..1..0, repeats
-        scale = MAX_SCALE - 0.12 * wave;  // full -> ~0.88 and back, calm but visible
-        fillOpacity = 1 - 0.1 * wave;     // a touch of glow along with the size
+        scale = MAX_SCALE - pulseAmount() * wave; // full -> ~0.88 and back, calm but visible
+        fillOpacity = 1 - 0.1 * wave;             // a touch of glow along with the size
       } else {
         // default: orange dot growing from the center until it fills the circle (linear = steady)
         ring.style.opacity = "0";
@@ -273,7 +304,7 @@
         holdDot.style.transform = "scale(" + t.toFixed(4) + ")";
       }
     } else { // exhale
-      scale = MAX_SCALE - (MAX_SCALE - MIN_SCALE) * easeInOut(t);
+      scale = MAX_SCALE - (MAX_SCALE - low) * easeInOut(t);
       fillColor = useColor ? colors.exhale : colors.accent;
       ring.style.opacity = "0";
       holdDot.style.opacity = "0";
@@ -322,6 +353,8 @@
     var root = document.documentElement;
     if (settings.theme === "system") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", settings.theme);
+    // keep the browser UI color with a forced theme (page.js owns that meta tag)
+    if (window.BreathPage) window.BreathPage.applyThemeColor(settings.theme);
     refreshColors();
     if (!running) fill.style.fill = colors.idle;
   }
@@ -401,11 +434,19 @@
     });
   }
 
+  /* Offline support: the service worker caches the (tiny) site so it also works
+     without a connection. Registered from here only – its scope covers all pages. */
+  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () { /* optional extra */ });
+    });
+  }
+
   /* --- Init --- */
   applyLang();
   applyTheme();
   syncControls();
   applyDisplayToggles();
   wireControls();
-  fill.style.transform = "scale(" + MIN_SCALE + ")";
+  fill.style.transform = "scale(" + minScale() + ")";
 })();

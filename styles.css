@@ -237,10 +237,18 @@ body {
 
 /* --- Settings panel --- */
 .settings-panel {
+  --panel-top: max(3.4rem, calc(env(safe-area-inset-top) + 3rem));
   position: fixed;
-  top: max(3.4rem, calc(env(safe-area-inset-top) + 3rem));
+  top: var(--panel-top);
   right: max(0.9rem, env(safe-area-inset-right));
   width: min(88vw, 300px);
+  /* The body doesn't scroll, so the panel has to stay inside the viewport and
+     scroll on its own – otherwise the lower sections are unreachable on short
+     screens (a phone in landscape, for instance). */
+  max-height: calc(100vh - var(--panel-top) - 1rem);
+  max-height: calc(100dvh - var(--panel-top) - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: 14px;
@@ -345,6 +353,15 @@ body {
   font-size: 0.95rem;
   margin: 0.2rem 0 2rem;
 }
+/* Master switch: turning the sound on right here, so nobody picks sounds that
+   then stay silent in the app */
+.snd-master {
+  justify-content: space-between;
+  margin-bottom: 2.2rem;
+  cursor: pointer;
+}
+.snd-master .snd-text { flex: 1; }
+
 .snd-section { margin-bottom: 2.2rem; }
 .snd-section h2 {
   font-size: 0.72rem;

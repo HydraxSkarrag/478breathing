@@ -2,27 +2,62 @@
 # 4-7-8 breathing — server configuration (Apache)
 # --------------------------------------------------------------------------
 
+# Always serve over HTTPS
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Web app manifest needs its own MIME type
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
 # HTML always fresh, CSS/JS cached long (cache busting via ?v=<sha> on deploy)
 <IfModule mod_expires.c>
   ExpiresActive On
   ExpiresByType text/html            "access plus 0 seconds"
   ExpiresByType text/css             "access plus 7 days"
   ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType text/javascript      "access plus 7 days"
   ExpiresByType image/svg+xml        "access plus 7 days"
+  ExpiresByType image/png            "access plus 7 days"
+  ExpiresByType application/manifest+json "access plus 1 day"
 </IfModule>
 
 <IfModule mod_headers.c>
-  <FilesMatch "\.(css|js|svg)$">
+  <FilesMatch "\.(css|js|svg|png)$">
     Header set Cache-Control "public, max-age=604800"
   </FilesMatch>
   <FilesMatch "\.html$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
+  <FilesMatch "\.webmanifest$">
+    Header set Cache-Control "public, max-age=86400"
+  </FilesMatch>
+  # The service worker itself must never be served from a stale cache, otherwise
+  # browsers would keep an old version alive. Has to come after the .js rule.
+  <FilesMatch "^sw\.js$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
+  # --- Security headers -----------------------------------------------------
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "no-referrer"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+  # Everything is self hosted, so the policy can stay tight. Scripts live in
+  # their own files (no inline script anywhere); 'unsafe-inline' is only needed
+  # for styles, because the animation sets style properties on elements.
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+  # HSTS: only switch this on once you are sure the site stays on HTTPS – for a
+  # year browsers will then refuse plain HTTP for this host.
+  # Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
 </IfModule>
 
 # Compression
 <IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml application/manifest+json application/xml
 </IfModule>
 
 # Disable directory listing

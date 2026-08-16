@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-lang-fixed>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex">
   <title>Datenschutz · 4-7-8 Atmung</title>
-  <script>try{var t=JSON.parse(localStorage.getItem("breathe478.settings")||"{}").theme;if(t&&t!=="system")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
+  <!-- Render blocking on purpose: applies the saved theme before the first paint -->
+  <script src="page.js"></script>
 </head>
 <body class="legal">
   <div class="content">
@@ -29,6 +30,14 @@
       Es handelt sich um technisch notwendige, funktionale Speicherung; eine Einwilligung ist
       hierfür nicht erforderlich. Du kannst diese Daten jederzeit über die Einstellungen deines
       Browsers löschen.
+    </p>
+
+    <h2>Offline-Nutzung (Service Worker)</h2>
+    <p>
+      Damit die Seite auch ohne Internetverbindung funktioniert, speichert der Browser über
+      einen sogenannten Service Worker eine Kopie der Seitendateien in seinem lokalen Cache.
+      Auch dabei werden keine Daten an einen Server übertragen. Du kannst diesen Speicher
+      jederzeit über die Einstellungen deines Browsers leeren.
     </p>
 
     <p><a href="impressum.html">Impressum</a></p>

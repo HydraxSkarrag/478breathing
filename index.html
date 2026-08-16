@@ -7,6 +7,7 @@
   <meta name="theme-color" content="#e9ecef" media="(prefers-color-scheme: light)">
   <meta name="description" content="A minimalist guide for 4-7-8 breathing: inhale for 4 seconds, hold for 7, exhale for 8.">
   <title>4-7-8 Breathing</title>
+  <link rel="canonical" href="https://478breathing.hydrax.org/">
 
   <!-- Open Graph / social sharing (the domain is rewritten at deploy time via the SITE_URL variable) -->
   <meta property="og:type" content="website">
@@ -25,12 +26,16 @@
   <meta name="twitter:description" content="A minimalist breathing aid: inhale 4 seconds, hold 7, exhale 8. A single circle guides you, with optional sound.">
   <meta name="twitter:image" content="https://478breathing.hydrax.org/og-image.png">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
   <link rel="stylesheet" href="styles.css">
+  <!-- Render blocking on purpose: applies the saved theme before the first paint -->
+  <script src="page.js"></script>
 </head>
 <body>
   <main class="stage" id="stage">
     <!-- The circle itself is the start/stop button -->
-    <button class="breath" id="breathBtn" type="button" aria-label="Atmung starten">
+    <button class="breath" id="breathBtn" type="button" aria-label="Start breathing">
       <svg class="breath-svg" viewBox="0 0 200 200" aria-hidden="true">
         <circle class="fill" id="fill" cx="100" cy="100" r="80"></circle>
         <!-- Hold indicator, "dot" style: an orange dot growing from the center until it fills the circle -->
@@ -55,18 +60,18 @@
   </main>
 
   <!-- Subtle settings gear -->
-  <button class="settings-toggle" id="settingsToggle" type="button" aria-label="Einstellungen" aria-expanded="false" aria-controls="settingsPanel">
+  <button class="settings-toggle" id="settingsToggle" type="button" aria-label="Settings" aria-expanded="false" aria-controls="settingsPanel">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.49.49 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path>
     </svg>
   </button>
 
   <!-- Settings panel -->
-  <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Einstellungen" hidden>
-    <h2 data-i18n="group_general">Allgemein</h2>
+  <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Settings" hidden>
+    <h2 data-i18n="group_general">General</h2>
 
     <label class="row">
-      <span data-i18n="language">Sprache</span>
+      <span data-i18n="language">Language</span>
       <select id="setLang">
         <option value="de">Deutsch</option>
         <option value="en">English</option>
@@ -74,71 +79,71 @@
     </label>
 
     <label class="row">
-      <span data-i18n="design">Design</span>
+      <span data-i18n="design">Theme</span>
       <select id="setTheme">
         <option value="system" data-i18n="opt_system">System</option>
-        <option value="light" data-i18n="opt_light">Hell</option>
-        <option value="dark" data-i18n="opt_dark">Dunkel</option>
+        <option value="light" data-i18n="opt_light">Light</option>
+        <option value="dark" data-i18n="opt_dark">Dark</option>
       </select>
     </label>
 
-    <h2 data-i18n="group_sound">Ton</h2>
+    <h2 data-i18n="group_sound">Sound</h2>
 
     <label class="row switch-row">
-      <span data-i18n="sound">Ton</span>
+      <span data-i18n="sound">Sound</span>
       <input type="checkbox" id="setSound" class="switch">
     </label>
 
-    <a class="row row-link" href="sound.html" data-i18n="soundPage">Klänge anpassen …</a>
+    <a class="row row-link" href="sound.html" data-i18n="soundPage">Adjust sounds …</a>
 
-    <h2 data-i18n="group_display">Anzeige</h2>
+    <h2 data-i18n="group_display">Display</h2>
 
     <label class="row switch-row">
-      <span data-i18n="color">Farbwechsel</span>
+      <span data-i18n="color">Color change</span>
       <input type="checkbox" id="setColor" class="switch">
     </label>
 
     <label class="row">
-      <span data-i18n="holdStyle_label">Halten-Anzeige</span>
+      <span data-i18n="holdStyle_label">Hold display</span>
       <select id="setHoldStyle">
-        <option value="dot" data-i18n="opt_dot">Punkt</option>
+        <option value="dot" data-i18n="opt_dot">Dot</option>
         <option value="ring" data-i18n="opt_ring">Ring</option>
-        <option value="pulse" data-i18n="opt_pulse">Pulsieren</option>
+        <option value="pulse" data-i18n="opt_pulse">Pulse</option>
       </select>
     </label>
 
     <label class="row switch-row">
-      <span data-i18n="phaseText">Phasen-Text</span>
+      <span data-i18n="phaseText">Phase label</span>
       <input type="checkbox" id="setPhaseText" class="switch">
     </label>
 
     <label class="row switch-row">
-      <span data-i18n="counter">Zyklus-Zähler</span>
+      <span data-i18n="counter">Cycle counter</span>
       <input type="checkbox" id="setCounter" class="switch">
     </label>
 
-    <h2 data-i18n="group_session">Sitzung</h2>
+    <h2 data-i18n="group_session">Session</h2>
 
     <label class="row">
-      <span data-i18n="autostop">Auto-Stopp</span>
+      <span data-i18n="autostop">Auto-stop</span>
       <select id="setAutoStop">
-        <option value="0">Unbegrenzt</option>
-        <option value="2">2 Runden</option>
-        <option value="4">4 Runden</option>
-        <option value="8">8 Runden</option>
-        <option value="12">12 Runden</option>
+        <option value="0">Unlimited</option>
+        <option value="2">2 rounds</option>
+        <option value="4">4 rounds</option>
+        <option value="8">8 rounds</option>
+        <option value="12">12 rounds</option>
       </select>
     </label>
   </div>
 
   <footer class="footer">
-    <a href="technique.html" data-i18n="about">Die 478 Technik</a>
+    <a href="technique.html" data-i18n="about">The 478 technique</a>
     <span aria-hidden="true">·</span>
-    <a href="about.html" data-i18n="aboutProject">Über</a>
+    <a href="about.html" data-i18n="aboutProject">About</a>
     <span aria-hidden="true">·</span>
-    <a href="impressum.html" data-i18n="imprint">Impressum</a>
+    <a href="impressum.html" data-i18n="imprint">Imprint</a>
     <span aria-hidden="true">·</span>
-    <a href="datenschutz.html" data-i18n="privacy">Datenschutz</a>
+    <a href="datenschutz.html" data-i18n="privacy">Privacy</a>
   </footer>
 
   <script src="audio.js"></script>
