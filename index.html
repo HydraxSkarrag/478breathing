@@ -32,7 +32,9 @@
   <!-- Render blocking on purpose: applies the saved theme before the first paint -->
   <script src="page.js"></script>
 </head>
-<body>
+<body data-title-en="4-7-8 Breathing" data-title-de="4-7-8 Atmung"
+      data-desc-en="A minimalist guide for 4-7-8 breathing: inhale for 4 seconds, hold for 7, exhale for 8."
+      data-desc-de="Eine minimalistische Anleitung zur 4-7-8-Atmung: 4 Sekunden einatmen, 7 halten, 8 ausatmen.">
   <main class="stage" id="stage">
     <!-- The circle itself is the start/stop button -->
     <button class="breath" id="breathBtn" type="button" aria-label="Start breathing">
@@ -124,6 +126,11 @@
 
     <h2 data-i18n="group_session">Session</h2>
 
+    <label class="row switch-row">
+      <span data-i18n="exhaleFirst">Exhale first</span>
+      <input type="checkbox" id="setExhaleFirst" class="switch">
+    </label>
+
     <label class="row">
       <span data-i18n="autostop">Auto-stop</span>
       <select id="setAutoStop">
@@ -131,7 +138,6 @@
         <option value="2">2 rounds</option>
         <option value="4">4 rounds</option>
         <option value="8">8 rounds</option>
-        <option value="12">12 rounds</option>
       </select>
     </label>
   </div>

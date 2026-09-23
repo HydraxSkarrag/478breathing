@@ -2,12 +2,13 @@
    4-7-8 breathing — service worker (offline support)
 
    Deliberately simple and update safe:
-   - HTML: network first, so a deploy is visible immediately; the cached copy is
-     only used when offline.
-   - Everything else (CSS/JS/icons): cache first. Those URLs carry a ?v=<sha>
-     from the deploy, so a new version is a new URL and can never be stale.
+   - Versioned files (CSS/JS, which the deploy stamps with ?v=<sha>): cache
+     first. A new version is a new URL, so a cached copy can never be stale.
+   - Everything else (HTML, manifest, icons): network first, so a deploy is
+     visible immediately; the cached copy is only used when offline.
 --------------------------------------------------------------------------- */
-var CACHE = "breathe478-v1";
+// v2 drops the v1 cache, which held unversioned icons and the manifest cache first
+var CACHE = "breathe478-v2";
 var OFFLINE_FALLBACK = "./";
 
 self.addEventListener("install", function (event) {
@@ -32,6 +33,12 @@ self.addEventListener("activate", function (event) {
   );
 });
 
+// Only complete, same-origin answers are worth keeping; a 404 or a server error
+// must never become the offline copy of a page.
+function cacheable(res) {
+  return res && res.ok && res.type === "basic";
+}
+
 // Store a response and drop older entries for the same file. Without this every
 // deploy would leave its ?v=<sha> copies behind and the cache would grow forever.
 function putAndPrune(req, res) {
@@ -53,30 +60,28 @@ self.addEventListener("fetch", function (event) {
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  var isHTML = req.mode === "navigate" ||
-    (req.headers.get("accept") || "").indexOf("text/html") !== -1;
-
-  if (isHTML) {
+  if (url.searchParams.has("v")) {
     event.respondWith(
-      fetch(req).then(function (res) {
-        putAndPrune(req, res.clone());
-        return res;
-      }).catch(function () {
-        return caches.match(req).then(function (hit) {
-          return hit || caches.match(OFFLINE_FALLBACK);
+      caches.match(req).then(function (hit) {
+        if (hit) return hit;
+        return fetch(req).then(function (res) {
+          if (cacheable(res)) putAndPrune(req, res.clone());
+          return res;
         });
       })
     );
     return;
   }
 
+  var isPage = req.mode === "navigate";
   event.respondWith(
-    caches.match(req).then(function (hit) {
-      if (hit) return hit;
-      return fetch(req).then(function (res) {
-        if (res && res.status === 200 && res.type === "basic") putAndPrune(req, res.clone());
-        return res;
-      });
+    fetch(req).then(function (res) {
+      if (cacheable(res)) putAndPrune(req, res.clone());
+      return res;
+    }).catch(function () {
+      return caches.match(req).then(function (hit) {
+        return hit || (isPage ? caches.match(OFFLINE_FALLBACK) : null);
+      }).then(function (res) { return res || Response.error(); });
     })
   );
 });

@@ -11,6 +11,10 @@
   --panel-bg: #fbfcfd;
   --panel-border: #dde2e7;
   --track: rgba(0, 0, 0, 0.06);
+  /* Link text. Kept calm, but readable: at least 4.5:1 against the background
+     (WCAG AA), because the footer carries the legally required imprint links. */
+  --link: #3b6b99;
+  --link-muted: #5f6873;
 
   /* Phase colors */
   --c-inhale: #7fb77e;     /* inhale – calming green */
@@ -30,6 +34,8 @@
     --panel-bg: #161b22;
     --panel-border: #262d36;
     --track: rgba(255, 255, 255, 0.07);
+    --link: #6398c9;
+    --link-muted: #7a8490;
     --c-inhale: #6fae72;
     --c-hold-start: #d8c17f;
     --c-hold-end: #dc8b46;
@@ -47,6 +53,8 @@
   --panel-bg: #161b22;
   --panel-border: #262d36;
   --track: rgba(255, 255, 255, 0.07);
+  --link: #6398c9;
+  --link-muted: #7a8490;
   --c-inhale: #6fae72;
   --c-hold-start: #d8c17f;
   --c-hold-end: #dc8b46;
@@ -83,13 +91,18 @@ body {
   align-items: center;
   justify-content: center;
   gap: 1.5rem;
-  padding: 1rem;
+  /* room for the fixed footer, so the counter never runs into it */
+  padding: 1rem 1rem calc(2.5rem + env(safe-area-inset-bottom));
 }
 
 .breath {
   position: relative;
-  width: min(78vw, 78vh, 460px);
-  height: min(78vw, 78vh, 460px);
+  /* the height term leaves room for counter and footer on short screens
+     (a phone in landscape) */
+  width: min(78vw, 78vh, calc(100vh - 8rem), 460px);
+  height: min(78vw, 78vh, calc(100vh - 8rem), 460px);
+  width: min(78vw, 78dvh, calc(100dvh - 8rem), 460px);
+  height: min(78vw, 78dvh, calc(100dvh - 8rem), 460px);
   padding: 0;
   border: none;
   background: none;
@@ -330,18 +343,16 @@ body {
   right: 0;
   text-align: center;
   font-size: 0.9rem;
-  color: var(--muted);
-  opacity: 0.65;
-  transition: opacity 0.25s ease;
+  color: var(--link-muted);
 }
-.footer:hover { opacity: 0.9; }
-.footer a { color: inherit; text-decoration: none; }
-.footer a:hover { text-decoration: underline; }
+.footer a { color: inherit; text-decoration: none; transition: color 0.25s ease; }
+.footer a:hover,
+.footer a:focus-visible { color: var(--fg); text-decoration: underline; }
 .footer span { margin: 0 0.4em; }
 
 /* Link row inside the settings panel (e.g. "Adjust sounds …") */
 .row-link {
-  color: var(--c-exhale);
+  color: var(--link);
   text-decoration: none;
   font-size: 0.95rem;
 }
@@ -463,11 +474,11 @@ body {
 }
 .legal h1 { font-size: 1.5rem; margin-bottom: 0.4rem; }
 .legal h2 { font-size: 1rem; margin-top: 2rem; }
-.legal a { color: var(--c-exhale); }
+.legal a { color: var(--link); }
 .legal .back {
   display: inline-block;
   margin-bottom: 2rem;
-  color: var(--muted);
+  color: var(--link-muted);
   text-decoration: none;
   font-size: 0.9rem;
 }
@@ -476,5 +487,8 @@ body {
 .legal ul.links li { margin: 0.5rem 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  * { transition-duration: 0.001ms !important; }
+  * {
+    transition-duration: 0.001ms !important;
+    animation: none !important; /* e.g. the pulsing preview button */
+  }
 }

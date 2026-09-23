@@ -1,6 +1,7 @@
+# The legal pages are kept out of search results by their own
+# <meta name="robots" content="noindex">. Do not disallow them here:
+# a blocked page is never fetched, so that tag would never be seen.
 User-agent: *
 Allow: /
-Disallow: /impressum.html
-Disallow: /datenschutz.html
 
 Sitemap: https://478breathing.hydrax.org/sitemap.xml

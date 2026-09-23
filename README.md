@@ -22,12 +22,15 @@ settings); the legal pages (Impressum/Datenschutz) are German only.
   the exhale.
 - **Explainer page** ([`technique.html`](technique.html), bilingual DE/EN): what the 4-7-8
   technique is, how to do it and what it can help with, linked from the footer.
+- **Follows Dr. Weil's instructions:** an optional lead-in exhale before the first round
+  ("Exhale first", on by default) and auto-stop after **4 rounds** by default, his limit for
+  the first month (8 at most later, so no larger option is offered).
 - **Optional extras** (all toggleable): phase label, cycle counter, auto-stop after N rounds.
 - **Theme:** system / light / dark. **Color animation can be disabled** (monochrome).
 - **Screen stays awake** during a session (Screen Wake Lock API).
 - **Installable and offline capable:** web app manifest plus a small service worker
   ([`sw.js`](sw.js)), so the page can be added to the home screen and keeps working without a
-  connection (HTML network first, versioned assets cache first).
+  connection (versioned CSS/JS cache first, everything else network first).
 - **Accessible and considerate:** the settings panel scrolls on short screens, the sound
   picker is a proper ARIA radio group, and `prefers-reduced-motion` visibly tames the circle
   animation instead of only the CSS transitions.
@@ -48,8 +51,8 @@ Plain HTML/CSS/JS — no dependencies, no build step.
 | `impressum.html`, `datenschutz.html` | Legal pages (German only)                            |
 | `sw.js`, `site.webmanifest` | Offline support and home-screen install                       |
 
-There are no inline scripts anywhere, which keeps the Content-Security-Policy in
-[`.htaccess`](.htaccess) strict (`script-src 'self'`).
+There are no inline scripts or styles anywhere, which keeps the Content-Security-Policy in
+[`.htaccess`](.htaccess) strict (`script-src 'self'; style-src 'self'`).
 
 ## Local development
 
@@ -68,6 +71,8 @@ Every push to `main` triggers [`.github/workflows/deploy.yml`](.github/workflows
 which mirrors the site to any FTP server via `lftp`. Nothing is hard-coded to a specific host —
 just point the secrets at your server. Before uploading it appends `?v=<commit-sha>` to every
 local CSS/JS URL (cache busting) so browsers always fetch the current version after a deploy.
+The upload runs in two passes (assets first, HTML last) and replaces every file via a
+temporary name, so visitors never see new HTML pointing at an asset that isn't there yet.
 
 Set these secrets under **Settings → Environments → `production`**:
 
@@ -83,6 +88,7 @@ Optional **variables** (not secrets):
 | ---------------- | ------------------------------------------------------------------- |
 | `FTP_SERVER_DIR` | Target directory on the server (e.g. `/example.com/`); defaults to the FTP home |
 | `FTP_TLS`        | Set to `false` for plain FTP if the host doesn't support FTPS (default: TLS on) |
+| `FTP_VERIFY_CERT`| Set to `false` only if the FTPS certificate doesn't match `FTP_SERVER` (default: verified) |
 | `SITE_URL`       | Canonical site URL without trailing slash (e.g. `https://example.com`). If set, it replaces the default domain in the share tags, the canonical links, `sitemap.xml` and `robots.txt` at deploy time |
 
 If the secrets are missing the workflow does not fail — it skips the deploy with a warning.
@@ -99,7 +105,7 @@ domain text baked into the image is separate; regenerate `og-image.png` if you w
 Suggested captions:
 
 - **DE:** „4-7-8-Atmung zum Runterkommen: 4 Sekunden einatmen, 7 halten, 8 ausatmen. Ein
-  Kreis führt dich – ganz ohne Anmeldung, mit optionalem Ton. 🫁 https://478breathing.hydrax.org"
+  Kreis führt dich, ganz ohne Anmeldung und mit optionalem Ton. 🫁 https://478breathing.hydrax.org"
 - **EN:** "Calm down with 4-7-8 breathing: inhale 4s, hold 7s, exhale 8s. A single circle
   guides you — no sign-up, optional sound. 🫁 https://478breathing.hydrax.org"
 

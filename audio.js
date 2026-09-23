@@ -27,6 +27,12 @@
     if (!ctx) {
       var AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
+      // iOS mutes Web Audio while the ring/silent switch is on, which looks like
+      // "the sound is broken". The sound here is explicitly switched on, so play
+      // it like media instead (this may pause other audio that is playing).
+      if (navigator.audioSession) {
+        try { navigator.audioSession.type = "playback"; } catch (e) { /* not supported */ }
+      }
       ctx = new AC();
       finalOut = ctx.createGain();
       finalOut.gain.value = 0.9;
@@ -35,7 +41,8 @@
       master.gain.value = 1;
       master.connect(finalOut);
     }
-    if (ctx.state === "suspended") ctx.resume();
+    // Safari reports "interrupted" after a call or when another app took the audio
+    if (ctx.state === "suspended" || ctx.state === "interrupted") ctx.resume();
     return ctx;
   }
 

@@ -18,8 +18,12 @@
     holdStyle: "dot",    // hold indicator: dot (growing center dot) | ring (rim timer) | pulse (gentle breathing)
     phaseText: false,
     cycleCounter: true,
-    autoStopCycles: 0    // 0 = unlimited
+    exhaleFirst: true,   // one full exhale before the first round, as Dr. Weil describes it
+    autoStopCycles: 4    // 0 = unlimited; 4 is Dr. Weil's limit for the first month
   };
+  // must match the <select id="setAutoStop"> options in index.html (8 is the
+  // recommended maximum, so larger values are no longer offered)
+  var AUTO_STOP_OPTIONS = [0, 2, 4, 8];
   var settings = loadSettings();
 
   /* --- Translations (German/English) --- */
@@ -32,7 +36,7 @@
       sound: "Ton", soundPage: "Klänge anpassen …", color: "Farbwechsel",
       holdStyle_label: "Halten-Anzeige", opt_dot: "Punkt", opt_ring: "Ring", opt_pulse: "Pulsieren",
       phaseText: "Phasen-Text",
-      counter: "Zyklus-Zähler", autostop: "Auto-Stopp",
+      counter: "Zyklus-Zähler", exhaleFirst: "Zuerst ausatmen", autostop: "Auto-Stopp",
       opt_unlimited: "Unbegrenzt", round: "Runde", rounds: "Runden",
       phase_inhale: "Einatmen", phase_hold: "Halten", phase_exhale: "Ausatmen",
       aria_start: "Atmung starten", aria_stop: "Atmung beenden", aria_settings: "Einstellungen",
@@ -48,7 +52,7 @@
       sound: "Sound", soundPage: "Adjust sounds …", color: "Color change",
       holdStyle_label: "Hold display", opt_dot: "Dot", opt_ring: "Ring", opt_pulse: "Pulse",
       phaseText: "Phase label",
-      counter: "Cycle counter", autostop: "Auto-stop",
+      counter: "Cycle counter", exhaleFirst: "Exhale first", autostop: "Auto-stop",
       opt_unlimited: "Unlimited", round: "round", rounds: "rounds",
       phase_inhale: "Inhale", phase_hold: "Hold", phase_exhale: "Exhale",
       aria_start: "Start breathing", aria_stop: "Stop breathing", aria_settings: "Settings",
@@ -71,6 +75,11 @@
         }
       }
     } catch (e) { /* localStorage unavailable – use defaults */ }
+    // a stored value the menu no longer offers (e.g. the former 12 rounds)
+    // is clamped instead of leaving the select blank
+    var n = parseInt(s.autoStopCycles, 10) || 0;
+    if (AUTO_STOP_OPTIONS.indexOf(n) === -1) n = n > 8 ? 8 : defaults.autoStopCycles;
+    s.autoStopCycles = n;
     return s;
   }
 
@@ -85,6 +94,9 @@
     { name: "hold",   duration: 7000 },
     { name: "exhale", duration: 8000 }
   ];
+  // Optional lead-in: empty the lungs once before the first inhale. Not part of
+  // a round, so it is not counted; the circle stays small and turns blue.
+  var LEAD_IN = { name: "exhale", duration: 4000, lead: true };
 
   var MIN_SCALE = 0.35;
   var REDUCED_MIN_SCALE = 0.8; // much smaller travel for "prefers-reduced-motion"
@@ -118,6 +130,7 @@
 
   /* --- Runtime state --- */
   var running = false;
+  var leadIn = false; // true while the lead-in exhale runs
   var phaseIndex = 0;
   var phaseStart = 0;
   var cycles = 0;
@@ -180,9 +193,9 @@
     // is not. Without this the loop would catch up one phase per frame and fire a
     // burst of overlapping sounds (plus a jumping counter and an early auto-stop).
     // Instead we simply restart the phase the user came back to.
-    if (performance.now() - phaseStart > PHASES[phaseIndex].duration) {
+    if (performance.now() - phaseStart > currentPhase().duration) {
       phaseStart = performance.now();
-      onPhaseEnter(phaseIndex);
+      onPhaseEnter(currentPhase());
     }
   });
 
@@ -191,6 +204,7 @@
     if (running) return;
     running = true;
     cycles = 0;
+    leadIn = settings.exhaleFirst;
     phaseIndex = 0;
     phaseStart = performance.now();
     ensureAudio();
@@ -199,7 +213,7 @@
     stage.classList.add("running");
     breathBtn.setAttribute("aria-label", T().aria_stop);
     updateCounter();
-    onPhaseEnter(0);
+    onPhaseEnter(currentPhase());
     rafId = requestAnimationFrame(loop);
   }
 
@@ -227,8 +241,11 @@
     if (running) stop(false); else start();
   }
 
-  function onPhaseEnter(idx) {
-    var phase = PHASES[idx];
+  function currentPhase() {
+    return leadIn ? LEAD_IN : PHASES[phaseIndex];
+  }
+
+  function onPhaseEnter(phase) {
     // sound per phase
     if (phase.name === "inhale") playBreath("in", phase.duration);
     else if (phase.name === "exhale") playBreath("out", phase.duration);
@@ -243,13 +260,14 @@
 
   function loop(now) {
     if (!running) return;
-    var phase = PHASES[phaseIndex];
+    var phase = currentPhase();
     var elapsed = now - phaseStart;
 
     if (elapsed >= phase.duration) {
       phaseStart += phase.duration;
-      phaseIndex++;
-      if (phaseIndex >= PHASES.length) {
+      if (leadIn) {
+        leadIn = false; // lead-in done, round 1 starts with its inhale
+      } else if (++phaseIndex >= PHASES.length) {
         phaseIndex = 0;
         cycles++;
         // check auto-stop first so the next round doesn't briefly flash at the end
@@ -259,22 +277,29 @@
         }
         updateCounter();
       }
-      onPhaseEnter(phaseIndex);
-      phase = PHASES[phaseIndex];
+      phase = currentPhase();
+      onPhaseEnter(phase);
       elapsed = now - phaseStart;
     }
 
     var t = Math.min(elapsed / phase.duration, 1);
-    render(phase.name, t);
+    render(phase, t);
     rafId = requestAnimationFrame(loop);
   }
 
-  function render(name, t) {
+  function render(phase, t) {
+    var name = phase.name;
     var scale, fillColor, fillOpacity = 1;
     var useColor = settings.colorAnimation;
     var low = minScale();
 
-    if (name === "inhale") {
+    if (phase.lead) {
+      // lead-in exhale: the circle is already empty, only the color announces it
+      scale = low;
+      fillColor = useColor ? colors.exhale : colors.accent;
+      ring.style.opacity = "0";
+      holdDot.style.opacity = "0";
+    } else if (name === "inhale") {
       scale = low + (MAX_SCALE - low) * easeInOut(t);
       fillColor = useColor ? colors.inhale : colors.accent;
       ring.style.opacity = "0";
@@ -343,8 +368,14 @@
     settingsToggle.setAttribute("aria-label", t.aria_settings);
     settingsPanel.setAttribute("aria-label", t.settings_title);
     breathBtn.setAttribute("aria-label", running ? t.aria_stop : t.aria_start);
+    // tab title and description (the markup ships English, page.js set them once)
+    var title = document.body.getAttribute("data-title-" + settings.lang);
+    if (title) document.title = title;
+    var desc = document.body.getAttribute("data-desc-" + settings.lang);
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (desc && metaDesc) metaDesc.setAttribute("content", desc);
     // refresh the live display
-    if (running && settings.phaseText) phaseTextEl.textContent = phaseLabel(PHASES[phaseIndex].name);
+    if (running && settings.phaseText) phaseTextEl.textContent = phaseLabel(currentPhase().name);
     if (running) updateCounter();
   }
 
@@ -373,6 +404,7 @@
     document.getElementById("setHoldStyle").value = settings.holdStyle;
     document.getElementById("setPhaseText").checked = settings.phaseText;
     document.getElementById("setCounter").checked = settings.cycleCounter;
+    document.getElementById("setExhaleFirst").checked = settings.exhaleFirst;
     document.getElementById("setAutoStop").value = String(settings.autoStopCycles);
   }
 
@@ -399,8 +431,12 @@
     document.getElementById("setCounter").addEventListener("change", function (e) {
       settings.cycleCounter = e.target.checked; saveSettings(); applyDisplayToggles();
     });
+    document.getElementById("setExhaleFirst").addEventListener("change", function (e) {
+      settings.exhaleFirst = e.target.checked; saveSettings();
+    });
     document.getElementById("setAutoStop").addEventListener("change", function (e) {
       settings.autoStopCycles = parseInt(e.target.value, 10) || 0; saveSettings();
+      if (running) updateCounter(); // "Round 2 of 4" should follow right away
     });
   }
 
@@ -424,7 +460,11 @@
     if (!settingsPanel.contains(e.target) && !settingsToggle.contains(e.target)) openPanel(false);
   });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && !settingsPanel.hidden) openPanel(false);
+    if (e.key !== "Escape" || settingsPanel.hidden) return;
+    // hand the focus back to the gear, otherwise it would stay on a now hidden control
+    var focusInside = settingsPanel.contains(document.activeElement);
+    openPanel(false);
+    if (focusInside) settingsToggle.focus();
   });
 
   /* React to system theme changes (only in system mode) */
