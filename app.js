@@ -18,7 +18,11 @@
     holdStyle: "dot",    // hold indicator: dot (growing center dot) | ring (rim timer) | pulse (gentle breathing)
     phaseText: false,
     cycleCounter: true,
-    exhaleFirst: true,   // one full exhale before the first round, as Dr. Weil describes it
+    // optional full exhale before the first round, as Dr. Weil describes it. Off by
+    // default: unannounced, a session starting blue with an exhale sound reads as a
+    // glitch. (Renamed from "exhaleFirst", which browsers had stored as true without
+    // anyone choosing it, so that old value is ignored.)
+    leadInExhale: false,
     autoStopCycles: 4    // 0 = unlimited; 4 is Dr. Weil's limit for the first month
   };
   // must match the <select id="setAutoStop"> options in index.html (8 is the
@@ -204,7 +208,7 @@
     if (running) return;
     running = true;
     cycles = 0;
-    leadIn = settings.exhaleFirst;
+    leadIn = settings.leadInExhale;
     phaseIndex = 0;
     phaseStart = performance.now();
     ensureAudio();
@@ -404,7 +408,7 @@
     document.getElementById("setHoldStyle").value = settings.holdStyle;
     document.getElementById("setPhaseText").checked = settings.phaseText;
     document.getElementById("setCounter").checked = settings.cycleCounter;
-    document.getElementById("setExhaleFirst").checked = settings.exhaleFirst;
+    document.getElementById("setExhaleFirst").checked = settings.leadInExhale;
     document.getElementById("setAutoStop").value = String(settings.autoStopCycles);
   }
 
@@ -432,7 +436,7 @@
       settings.cycleCounter = e.target.checked; saveSettings(); applyDisplayToggles();
     });
     document.getElementById("setExhaleFirst").addEventListener("change", function (e) {
-      settings.exhaleFirst = e.target.checked; saveSettings();
+      settings.leadInExhale = e.target.checked; saveSettings();
     });
     document.getElementById("setAutoStop").addEventListener("change", function (e) {
       settings.autoStopCycles = parseInt(e.target.value, 10) || 0; saveSettings();

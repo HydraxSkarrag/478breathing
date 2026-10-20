@@ -23,7 +23,7 @@ settings); the legal pages (Impressum/Datenschutz) are German only.
 - **Explainer page** ([`technique.html`](technique.html), bilingual DE/EN): what the 4-7-8
   technique is, how to do it and what it can help with, linked from the footer.
 - **Follows Dr. Weil's instructions:** an optional lead-in exhale before the first round
-  ("Exhale first", on by default) and auto-stop after **4 rounds** by default, his limit for
+  ("Exhale first", off by default) and auto-stop after **4 rounds** by default, his limit for
   the first month (8 at most later, so no larger option is offered).
 - **Optional extras** (all toggleable): phase label, cycle counter, auto-stop after N rounds.
 - **Theme:** system / light / dark. **Color animation can be disabled** (monochrome).
