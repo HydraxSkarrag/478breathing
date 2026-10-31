@@ -48,7 +48,7 @@
   var SECTIONS = [
     {
       key: "soundInhale", kind: "inhale", test: 4000,
-      title: de ? "Einatmen (4 s)" : "Inhale (4 s)",
+      title: de ? "Einatmen" : "Inhale",
       variants: [
         { id: "ocean", name: de ? "Ozean" : "Ocean", desc: de ? "Tiefes, weiches Rauschen, das anschwillt." : "Deep, soft noise that swells." },
         { id: "wind",  name: de ? "Wind"  : "Wind",  desc: de ? "Heller, pfeifender Luftzug mit Böen, der ansteigt." : "A bright, whistling draft with gusts, rising." },
@@ -59,7 +59,7 @@
     },
     {
       key: "soundExhale", kind: "exhale", test: 8000,
-      title: de ? "Ausatmen (8 s)" : "Exhale (8 s)",
+      title: de ? "Ausatmen" : "Exhale",
       variants: [
         { id: "ocean", name: de ? "Ozean" : "Ocean", desc: de ? "Tiefes, weiches Rauschen, das verebbt." : "Deep, soft noise that ebbs away." },
         { id: "wind",  name: de ? "Wind"  : "Wind",  desc: de ? "Heller, pfeifender Luftzug, der absinkt und verweht." : "A bright, whistling draft that sinks and drifts away." },

@@ -15,6 +15,7 @@
      (WCAG AA), because the footer carries the legally required imprint links. */
   --link: #3b6b99;
   --link-muted: #5f6873;
+  --seg-active: #fbfcfd; /* selected part of the exercise switch */
 
   /* Phase colors */
   --c-inhale: #7fb77e;     /* inhale – calming green */
@@ -36,6 +37,7 @@
     --track: rgba(255, 255, 255, 0.07);
     --link: #6398c9;
     --link-muted: #7a8490;
+    --seg-active: #2a323b;
     --c-inhale: #6fae72;
     --c-hold-start: #d8c17f;
     --c-hold-end: #dc8b46;
@@ -55,6 +57,7 @@
   --track: rgba(255, 255, 255, 0.07);
   --link: #6398c9;
   --link-muted: #7a8490;
+  --seg-active: #2a323b;
   --c-inhale: #6fae72;
   --c-hold-start: #d8c17f;
   --c-hold-end: #dc8b46;
@@ -265,20 +268,77 @@ body {
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: 14px;
-  padding: 0.5rem 1rem 1rem;
+  padding: 0 1rem 0.6rem;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
   z-index: 10;
 }
 .settings-panel[hidden] { display: none; }
 
-.settings-panel h2 {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin: 0.9rem 0 0.4rem;
+/* Tabs: "Breathing | General" */
+.tabs {
+  display: flex;
+  gap: 1.2rem;
+  margin: 0 0 0.3rem;
+  border-bottom: 1px solid var(--panel-border);
 }
+.tab {
+  font: inherit;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px; /* the active underline sits on the divider */
+  padding: 0.8rem 0 0.55rem;
+  color: var(--link-muted);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.tab:hover { color: var(--fg); }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--c-inhale); }
+.tab:focus-visible { outline: 2px solid var(--muted); outline-offset: 2px; border-radius: 4px; }
+.tab-panel[hidden],
+.ex-group[hidden] { display: none; }
+
+/* Exercise switch: a two-part segmented control built from radio buttons */
+.segmented-row {
+  margin: 0;
+  min-width: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+}
+.segmented-row legend {
+  float: left; /* lets the legend sit in the flex row like a normal label */
+  padding: 0;
+}
+.segmented {
+  display: flex;
+  padding: 2px;
+  border: 1px solid var(--panel-border);
+  border-radius: 9px;
+  background: var(--bg);
+}
+.segmented label { position: relative; cursor: pointer; }
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.segmented span {
+  display: block;
+  padding: 0.25rem 0.7rem;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  color: var(--link-muted);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.segmented input:checked + span {
+  background: var(--seg-active);
+  color: var(--fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.segmented input:focus-visible + span { outline: 2px solid var(--muted); outline-offset: 1px; }
 
 .row {
   display: flex;
@@ -289,11 +349,8 @@ body {
   font-size: 0.95rem;
   border-top: 1px solid var(--panel-border);
 }
-.row:first-of-type { border-top: none; }
-/* no divider directly under a section heading */
-.settings-panel h2 + .row { border-top: none; }
-/* the first section heading sits flush with the panel's top padding */
-.settings-panel h2:first-child { margin-top: 0.2rem; }
+/* no divider directly under the tabs */
+.tab-panel > .row:first-child { border-top: none; }
 
 .settings-panel select {
   font: inherit;
@@ -474,6 +531,7 @@ body {
 }
 .legal h1 { font-size: 1.5rem; margin-bottom: 0.4rem; }
 .legal h2 { font-size: 1rem; margin-top: 2rem; }
+.legal h3 { font-size: 0.95rem; margin: 1.5rem 0 0.4rem; color: var(--link-muted); }
 .legal a { color: var(--link); }
 .legal .back {
   display: inline-block;

@@ -23,46 +23,62 @@
     // glitch. (Renamed from "exhaleFirst", which browsers had stored as true without
     // anyone choosing it, so that old value is ignored.)
     leadInExhale: false,
-    autoStopCycles: 4    // 0 = unlimited; 4 is Dr. Weil's limit for the first month
+    autoStopCycles: 4,   // 0 = unlimited; 4 is Dr. Weil's limit for the first month
+    exercise: "478",     // 478 | resonance
+    resonancePace: 5500, // ms per inhale and per exhale; 5.5 s is James Nestor's figure
+    resonanceMinutes: 5  // 0 = unlimited
   };
-  // must match the <select id="setAutoStop"> options in index.html (8 is the
+  // must match the <select> options in index.html (for 4-7-8, 8 rounds is the
   // recommended maximum, so larger values are no longer offered)
-  var AUTO_STOP_OPTIONS = [0, 2, 4, 8];
+  var OPTIONS = {
+    exercise: ["478", "resonance"],
+    autoStopCycles: [0, 2, 4, 8],
+    resonancePace: [5000, 5500, 6000],
+    resonanceMinutes: [0, 3, 5, 10]
+  };
   var settings = loadSettings();
 
   /* --- Translations (German/English) --- */
   var I18N = {
     de: {
       settings_title: "Einstellungen",
-      group_general: "Allgemein", group_sound: "Ton", group_display: "Anzeige", group_session: "Sitzung",
+      tab_breath: "Atmung", tab_general: "Allgemein",
+      exercise: "Übung", ex_478: "4-7-8", ex_resonance: "Resonanz",
+      pace: "Tempo", duration: "Dauer", minutes: "Min.",
       language: "Sprache", design: "Design",
       opt_system: "System", opt_light: "Hell", opt_dark: "Dunkel",
       sound: "Ton", soundPage: "Klänge anpassen …", color: "Farbwechsel",
       holdStyle_label: "Halten-Anzeige", opt_dot: "Punkt", opt_ring: "Ring", opt_pulse: "Pulsieren",
       phaseText: "Phasen-Text",
-      counter: "Zyklus-Zähler", exhaleFirst: "Zuerst ausatmen", autostop: "Auto-Stopp",
+      counter: "Zähler", exhaleFirst: "Zuerst ausatmen", autostop: "Auto-Stopp",
       opt_unlimited: "Unbegrenzt", round: "Runde", rounds: "Runden",
       phase_inhale: "Einatmen", phase_hold: "Halten", phase_exhale: "Ausatmen",
       aria_start: "Atmung starten", aria_stop: "Atmung beenden", aria_settings: "Einstellungen",
-      about: "Die 478 Technik", aboutProject: "Über", imprint: "Impressum", privacy: "Datenschutz",
+      about: "Die Übungen", aboutProject: "Über", imprint: "Impressum", privacy: "Datenschutz",
       roundLabel: function (n) { return n + ". Runde"; },
-      roundOfLabel: function (n, total) { return n + ". von " + total + " Runden"; }
+      roundOfLabel: function (n, total) { return n + ". von " + total + " Runden"; },
+      timeLeft: function (time) { return "noch " + time; },
+      seconds: function (ms) { return String(ms / 1000).replace(".", ",") + " s"; }
     },
     en: {
       settings_title: "Settings",
-      group_general: "General", group_sound: "Sound", group_display: "Display", group_session: "Session",
+      tab_breath: "Breathing", tab_general: "General",
+      exercise: "Exercise", ex_478: "4-7-8", ex_resonance: "Resonance",
+      pace: "Pace", duration: "Duration", minutes: "min",
       language: "Language", design: "Theme",
       opt_system: "System", opt_light: "Light", opt_dark: "Dark",
       sound: "Sound", soundPage: "Adjust sounds …", color: "Color change",
       holdStyle_label: "Hold display", opt_dot: "Dot", opt_ring: "Ring", opt_pulse: "Pulse",
       phaseText: "Phase label",
-      counter: "Cycle counter", exhaleFirst: "Exhale first", autostop: "Auto-stop",
+      counter: "Counter", exhaleFirst: "Exhale first", autostop: "Auto-stop",
       opt_unlimited: "Unlimited", round: "round", rounds: "rounds",
       phase_inhale: "Inhale", phase_hold: "Hold", phase_exhale: "Exhale",
       aria_start: "Start breathing", aria_stop: "Stop breathing", aria_settings: "Settings",
-      about: "The 478 technique", aboutProject: "About", imprint: "Imprint", privacy: "Privacy",
+      about: "The exercises", aboutProject: "About", imprint: "Imprint", privacy: "Privacy",
       roundLabel: function (n) { return "Round " + n; },
-      roundOfLabel: function (n, total) { return "Round " + n + " of " + total; }
+      roundOfLabel: function (n, total) { return "Round " + n + " of " + total; },
+      timeLeft: function (time) { return time + " left"; },
+      seconds: function (ms) { return ms / 1000 + " s"; }
     }
   };
   function T() { return I18N[settings.lang] || I18N.en; }
@@ -79,11 +95,13 @@
         }
       }
     } catch (e) { /* localStorage unavailable – use defaults */ }
-    // a stored value the menu no longer offers (e.g. the former 12 rounds)
-    // is clamped instead of leaving the select blank
-    var n = parseInt(s.autoStopCycles, 10) || 0;
-    if (AUTO_STOP_OPTIONS.indexOf(n) === -1) n = n > 8 ? 8 : defaults.autoStopCycles;
-    s.autoStopCycles = n;
+    // a stored value the menu does not offer falls back to the default instead
+    // of leaving a select blank; the former 12 rounds become the maximum of 8
+    if (parseInt(s.autoStopCycles, 10) > 8) s.autoStopCycles = 8;
+    for (var opt in OPTIONS) {
+      var v = opt === "exercise" ? String(s[opt]) : parseInt(s[opt], 10);
+      s[opt] = OPTIONS[opt].indexOf(v) === -1 ? defaults[opt] : v;
+    }
     return s;
   }
 
@@ -92,14 +110,29 @@
     catch (e) { /* ignore */ }
   }
 
-  /* --- Phases of the 4-7-8 breath (labels come from I18N) --- */
-  var PHASES = [
+  /* --- Exercises (phase labels come from I18N) ---
+     4-7-8:     inhale 4 s, hold 7 s, exhale 8 s; auto-stop counts rounds.
+     Resonance: inhale and exhale at the same pace, no hold (about 5.5 breaths a
+                minute at 5.5 s); auto-stop counts minutes. */
+  var PHASES_478 = [
     { name: "inhale", duration: 4000 },
     { name: "hold",   duration: 7000 },
     { name: "exhale", duration: 8000 }
   ];
-  // Optional lead-in: empty the lungs once before the first inhale. Not part of
-  // a round, so it is not counted; the circle stays small and turns blue.
+  function buildPhases() {
+    if (settings.exercise !== "resonance") return PHASES_478;
+    return [
+      { name: "inhale", duration: settings.resonancePace },
+      { name: "exhale", duration: settings.resonancePace }
+    ];
+  }
+  function cycleLength(list) {
+    var total = 0;
+    for (var i = 0; i < list.length; i++) total += list[i].duration;
+    return total;
+  }
+  // Optional lead-in (4-7-8 only): empty the lungs once before the first inhale.
+  // Not part of a round, so it is not counted; the circle stays small and turns blue.
   var LEAD_IN = { name: "exhale", duration: 4000, lead: true };
 
   var MIN_SCALE = 0.35;
@@ -135,9 +168,12 @@
   /* --- Runtime state --- */
   var running = false;
   var leadIn = false; // true while the lead-in exhale runs
+  var phases = buildPhases(); // fixed per breath; settings changes apply from the next one
   var phaseIndex = 0;
   var phaseStart = 0;
   var cycles = 0;
+  var doneMs = 0;       // session time of all completed phases (lead-in excluded)
+  var cycleStartMs = 0; // doneMs when the current breath began
   var rafId = null;
   var colors = {}; // read from CSS
 
@@ -208,7 +244,10 @@
     if (running) return;
     running = true;
     cycles = 0;
-    leadIn = settings.leadInExhale;
+    doneMs = 0;
+    cycleStartMs = 0;
+    phases = buildPhases();
+    leadIn = settings.exercise === "478" && settings.leadInExhale;
     phaseIndex = 0;
     phaseStart = performance.now();
     ensureAudio();
@@ -216,7 +255,7 @@
     breathBtn.classList.remove("smooth");
     stage.classList.add("running");
     breathBtn.setAttribute("aria-label", T().aria_stop);
-    updateCounter();
+    updateCounter(0);
     onPhaseEnter(currentPhase());
     rafId = requestAnimationFrame(loop);
   }
@@ -239,6 +278,7 @@
     ring.style.opacity = "0";
     holdDot.style.opacity = "0";
     phaseTextEl.textContent = "";
+    counterText = "";
   }
 
   function toggle() {
@@ -246,7 +286,25 @@
   }
 
   function currentPhase() {
-    return leadIn ? LEAD_IN : PHASES[phaseIndex];
+    return leadIn ? LEAD_IN : phases[phaseIndex];
+  }
+
+  /* Resonance auto-stop works in minutes but always ends after a complete
+     breath: the session runs for the whole number of breaths that comes closest
+     to the chosen time. Returns that end, in session time (ms). */
+  function plannedEnd() {
+    var cycle = cycleLength(phases);
+    var breaths = Math.round((settings.resonanceMinutes * 60000 - cycleStartMs) / cycle);
+    return cycleStartMs + Math.max(1, breaths) * cycle;
+  }
+
+  // Checked at the end of every breath, before the next one starts.
+  function sessionComplete() {
+    if (settings.exercise === "resonance") {
+      if (settings.resonanceMinutes <= 0) return false;
+      return Math.round((settings.resonanceMinutes * 60000 - doneMs) / cycleLength(phases)) <= 0;
+    }
+    return settings.autoStopCycles > 0 && cycles >= settings.autoStopCycles;
   }
 
   function onPhaseEnter(phase) {
@@ -271,15 +329,19 @@
       phaseStart += phase.duration;
       if (leadIn) {
         leadIn = false; // lead-in done, round 1 starts with its inhale
-      } else if (++phaseIndex >= PHASES.length) {
-        phaseIndex = 0;
-        cycles++;
-        // check auto-stop first so the next round doesn't briefly flash at the end
-        if (settings.autoStopCycles > 0 && cycles >= settings.autoStopCycles) {
-          stop(true);
-          return;
+      } else {
+        doneMs += phase.duration;
+        if (++phaseIndex >= phases.length) {
+          phaseIndex = 0;
+          cycles++;
+          cycleStartMs = doneMs;
+          phases = buildPhases(); // a changed pace takes effect with this breath
+          // check auto-stop first so the next round doesn't briefly flash at the end
+          if (sessionComplete()) {
+            stop(true);
+            return;
+          }
         }
-        updateCounter();
       }
       phase = currentPhase();
       onPhaseEnter(phase);
@@ -288,6 +350,7 @@
 
     var t = Math.min(elapsed / phase.duration, 1);
     render(phase, t);
+    updateCounter(leadIn ? 0 : doneMs + elapsed);
     rafId = requestAnimationFrame(loop);
   }
 
@@ -344,12 +407,23 @@
     fill.style.opacity = fillOpacity.toFixed(3);
   }
 
-  function updateCounter() {
-    // "1. Runde" / "Round 1" — or "1. von 2 Runden" / "Round 1 of 2" when auto-stop is set
-    var t = T();
-    counterEl.textContent = settings.autoStopCycles > 0
-      ? t.roundOfLabel(cycles + 1, settings.autoStopCycles)
-      : t.roundLabel(cycles + 1);
+  // Called every frame, so the text is only written when it actually changes.
+  var counterText = "";
+  function updateCounter(sessionMs) {
+    var t = T(), text;
+    if (settings.exercise === "resonance") {
+      // time instead of rounds: what is left of the session, or how long it runs
+      var ms = settings.resonanceMinutes > 0 ? plannedEnd() - (sessionMs || 0) : (sessionMs || 0);
+      var secs = settings.resonanceMinutes > 0 ? Math.ceil(ms / 1000) : Math.floor(ms / 1000);
+      var clock = Math.floor(secs / 60) + ":" + ("0" + (secs % 60)).slice(-2);
+      text = settings.resonanceMinutes > 0 ? t.timeLeft(clock) : clock;
+    } else {
+      // "1. Runde" / "Round 1", or "1. von 4 Runden" / "Round 1 of 4" with auto-stop
+      text = settings.autoStopCycles > 0
+        ? t.roundOfLabel(cycles + 1, settings.autoStopCycles)
+        : t.roundLabel(cycles + 1);
+    }
+    if (text !== counterText) { counterText = text; counterEl.textContent = text; }
   }
 
   /* ======================= Language ======================= */
@@ -362,12 +436,10 @@
       var key = nodes[i].getAttribute("data-i18n");
       if (t[key] != null) nodes[i].textContent = t[key];
     }
-    // auto-stop options (with a number)
-    var as = document.getElementById("setAutoStop");
-    for (var j = 0; j < as.options.length; j++) {
-      var v = parseInt(as.options[j].value, 10);
-      as.options[j].textContent = v === 0 ? t.opt_unlimited : (v + " " + (v === 1 ? t.round : t.rounds));
-    }
+    // options with a number: rounds, pace (decimal comma in German), minutes
+    labelOptions("setAutoStop", function (v) { return v + " " + (v === 1 ? t.round : t.rounds); });
+    labelOptions("setPace", function (v) { return t.seconds(v); });
+    labelOptions("setDuration", function (v) { return v + " " + t.minutes; });
     // aria labels
     settingsToggle.setAttribute("aria-label", t.aria_settings);
     settingsPanel.setAttribute("aria-label", t.settings_title);
@@ -380,7 +452,15 @@
     if (desc && metaDesc) metaDesc.setAttribute("content", desc);
     // refresh the live display
     if (running && settings.phaseText) phaseTextEl.textContent = phaseLabel(currentPhase().name);
-    if (running) updateCounter();
+    counterText = ""; // rewritten in the new language on the next frame
+  }
+
+  function labelOptions(id, label) {
+    var select = document.getElementById(id);
+    for (var i = 0; i < select.options.length; i++) {
+      var v = parseInt(select.options[i].value, 10);
+      select.options[i].textContent = v === 0 ? T().opt_unlimited : label(v);
+    }
   }
 
   /* ======================= Theme ======================= */
@@ -400,6 +480,16 @@
     stage.classList.toggle("show-counter", settings.cycleCounter);
   }
 
+  // Only the options of the chosen exercise are shown.
+  function applyExercise() {
+    var groups = settingsPanel.querySelectorAll(".ex-group");
+    for (var i = 0; i < groups.length; i++) {
+      groups[i].hidden = groups[i].getAttribute("data-exercise") !== settings.exercise;
+    }
+    // rounds are worth announcing, a clock ticking every second is not
+    counterEl.setAttribute("aria-live", settings.exercise === "resonance" ? "off" : "polite");
+  }
+
   function syncControls() {
     document.getElementById("setLang").value = settings.lang;
     document.getElementById("setTheme").value = settings.theme;
@@ -409,6 +499,10 @@
     document.getElementById("setPhaseText").checked = settings.phaseText;
     document.getElementById("setCounter").checked = settings.cycleCounter;
     document.getElementById("setExhaleFirst").checked = settings.leadInExhale;
+    document.getElementById("setPace").value = String(settings.resonancePace);
+    document.getElementById("setDuration").value = String(settings.resonanceMinutes);
+    var radios = document.getElementsByName("exercise");
+    for (var i = 0; i < radios.length; i++) radios[i].checked = radios[i].value === settings.exercise;
     document.getElementById("setAutoStop").value = String(settings.autoStopCycles);
   }
 
@@ -440,13 +534,53 @@
     });
     document.getElementById("setAutoStop").addEventListener("change", function (e) {
       settings.autoStopCycles = parseInt(e.target.value, 10) || 0; saveSettings();
-      if (running) updateCounter(); // "Round 2 of 4" should follow right away
     });
+    document.getElementById("setPace").addEventListener("change", function (e) {
+      settings.resonancePace = parseInt(e.target.value, 10); saveSettings();
+    });
+    document.getElementById("setDuration").addEventListener("change", function (e) {
+      settings.resonanceMinutes = parseInt(e.target.value, 10) || 0; saveSettings();
+    });
+    var radios = document.getElementsByName("exercise");
+    for (var i = 0; i < radios.length; i++) {
+      radios[i].addEventListener("change", function (e) {
+        if (!e.target.checked) return;
+        // a different exercise is a different session: end the running one
+        if (running) stop(false);
+        settings.exercise = e.target.value; saveSettings();
+        applyExercise();
+      });
+    }
   }
 
   function openPanel(open) {
+    if (open) selectTab("tabBreath", false); // always opens on the exercise settings
     settingsPanel.hidden = !open;
     settingsToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  /* Tabs "Breathing | General" (ARIA tabs: arrow keys move between them) */
+  var tabs = settingsPanel.querySelectorAll('[role="tab"]');
+  function selectTab(id, focus) {
+    for (var i = 0; i < tabs.length; i++) {
+      var on = tabs[i].id === id;
+      tabs[i].setAttribute("aria-selected", on ? "true" : "false");
+      tabs[i].tabIndex = on ? 0 : -1;
+      document.getElementById(tabs[i].getAttribute("aria-controls")).hidden = !on;
+      if (on && focus) tabs[i].focus();
+    }
+  }
+  for (var ti = 0; ti < tabs.length; ti++) {
+    tabs[ti].addEventListener("click", function (e) { selectTab(e.currentTarget.id, false); });
+    tabs[ti].addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
+      e.preventDefault();
+      var idx = Array.prototype.indexOf.call(tabs, e.currentTarget);
+      if (e.key === "ArrowLeft") idx = (idx + tabs.length - 1) % tabs.length;
+      else if (e.key === "ArrowRight") idx = (idx + 1) % tabs.length;
+      else idx = e.key === "Home" ? 0 : tabs.length - 1;
+      selectTab(tabs[idx].id, true);
+    });
   }
 
   /* Circle: start/stop */
@@ -491,6 +625,7 @@
   applyTheme();
   syncControls();
   applyDisplayToggles();
+  applyExercise();
   wireControls();
   fill.style.transform = "scale(" + minScale() + ")";
 })();

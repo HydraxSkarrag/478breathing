@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#e9ecef" media="(prefers-color-scheme: light)">
-  <meta name="description" content="A minimalist guide for 4-7-8 breathing: inhale for 4 seconds, hold for 7, exhale for 8.">
+  <meta name="description" content="A minimalist guide for 4-7-8 breathing and resonance breathing: a single circle sets the pace. No sign-up, optional sound.">
   <title>4-7-8 Breathing</title>
   <link rel="canonical" href="https://478breathing.hydrax.org/">
 
@@ -13,18 +13,19 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="4-7-8 Breathing">
   <meta property="og:title" content="4-7-8 Breathing: breathe calmly">
-  <meta property="og:description" content="A minimalist breathing aid: inhale 4 seconds, hold 7, exhale 8. A single circle guides you, with optional sound.">
+  <meta property="og:description" content="Two calm breathing exercises, guided by a single circle: 4-7-8 to wind down (inhale 4, hold 7, exhale 8) and resonance breathing at about 5.5 breaths a minute. No sign-up, optional sound.">
   <meta property="og:url" content="https://478breathing.hydrax.org/">
-  <meta property="og:image" content="https://478breathing.hydrax.org/og-image.png">
+  <!-- bump ?v= whenever og-image.png changes: messengers cache previews by image URL -->
+  <meta property="og:image" content="https://478breathing.hydrax.org/og-image.png?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="4-7-8 breathing: a circle guides you through the technique.">
+  <meta property="og:image:alt" content="Two breathing exercises side by side: 4-7-8 (inhale 4, hold 7, exhale 8) and resonance (inhale 5.5, exhale 5.5).">
   <meta property="og:locale" content="en_US">
   <meta property="og:locale:alternate" content="de_DE">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="4-7-8 Breathing: breathe calmly">
-  <meta name="twitter:description" content="A minimalist breathing aid: inhale 4 seconds, hold 7, exhale 8. A single circle guides you, with optional sound.">
-  <meta name="twitter:image" content="https://478breathing.hydrax.org/og-image.png">
+  <meta name="twitter:description" content="Two calm breathing exercises, guided by a single circle: 4-7-8 to wind down (inhale 4, hold 7, exhale 8) and resonance breathing at about 5.5 breaths a minute. No sign-up, optional sound.">
+  <meta name="twitter:image" content="https://478breathing.hydrax.org/og-image.png?v=2">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="manifest" href="site.webmanifest">
@@ -33,8 +34,8 @@
   <script src="page.js"></script>
 </head>
 <body data-title-en="4-7-8 Breathing" data-title-de="4-7-8 Atmung"
-      data-desc-en="A minimalist guide for 4-7-8 breathing: inhale for 4 seconds, hold for 7, exhale for 8."
-      data-desc-de="Eine minimalistische Anleitung zur 4-7-8-Atmung: 4 Sekunden einatmen, 7 halten, 8 ausatmen.">
+      data-desc-en="A minimalist guide for 4-7-8 breathing and resonance breathing: a single circle sets the pace. No sign-up, optional sound."
+      data-desc-de="Eine minimalistische Anleitung für die 4-7-8-Atmung und die Resonanzatmung: Ein einzelner Kreis gibt das Tempo vor. Ohne Anmeldung, mit optionalem Ton.">
   <main class="stage" id="stage">
     <!-- The circle itself is the start/stop button -->
     <button class="breath" id="breathBtn" type="button" aria-label="Start breathing">
@@ -68,82 +69,117 @@
     </svg>
   </button>
 
-  <!-- Settings panel -->
+  <!-- Settings panel: "Breathing" holds only what the chosen exercise uses,
+       "General" what applies to every exercise -->
   <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Settings" hidden>
-    <h2 data-i18n="group_general">General</h2>
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab" role="tab" id="tabBreath" aria-controls="panelBreath" aria-selected="true" data-i18n="tab_breath">Breathing</button>
+      <button type="button" class="tab" role="tab" id="tabGeneral" aria-controls="panelGeneral" aria-selected="false" tabindex="-1" data-i18n="tab_general">General</button>
+    </div>
 
-    <label class="row">
-      <span data-i18n="language">Language</span>
-      <select id="setLang">
-        <option value="de">Deutsch</option>
-        <option value="en">English</option>
-      </select>
-    </label>
+    <div class="tab-panel" id="panelBreath" role="tabpanel" aria-labelledby="tabBreath">
+      <fieldset class="row segmented-row">
+        <legend data-i18n="exercise">Exercise</legend>
+        <div class="segmented">
+          <label><input type="radio" name="exercise" value="478"><span data-i18n="ex_478">4-7-8</span></label>
+          <label><input type="radio" name="exercise" value="resonance"><span data-i18n="ex_resonance">Resonance</span></label>
+        </div>
+      </fieldset>
 
-    <label class="row">
-      <span data-i18n="design">Theme</span>
-      <select id="setTheme">
-        <option value="system" data-i18n="opt_system">System</option>
-        <option value="light" data-i18n="opt_light">Light</option>
-        <option value="dark" data-i18n="opt_dark">Dark</option>
-      </select>
-    </label>
+      <!-- 4-7-8 only -->
+      <div class="ex-group" data-exercise="478">
+        <label class="row switch-row">
+          <span data-i18n="exhaleFirst">Exhale first</span>
+          <input type="checkbox" id="setExhaleFirst" class="switch">
+        </label>
 
-    <h2 data-i18n="group_sound">Sound</h2>
+        <label class="row">
+          <span data-i18n="holdStyle_label">Hold display</span>
+          <select id="setHoldStyle">
+            <option value="dot" data-i18n="opt_dot">Dot</option>
+            <option value="ring" data-i18n="opt_ring">Ring</option>
+            <option value="pulse" data-i18n="opt_pulse">Pulse</option>
+          </select>
+        </label>
 
-    <label class="row switch-row">
-      <span data-i18n="sound">Sound</span>
-      <input type="checkbox" id="setSound" class="switch">
-    </label>
+        <label class="row">
+          <span data-i18n="autostop">Auto-stop</span>
+          <select id="setAutoStop">
+            <option value="0">Unlimited</option>
+            <option value="2">2 rounds</option>
+            <option value="4">4 rounds</option>
+            <option value="8">8 rounds</option>
+          </select>
+        </label>
+      </div>
 
-    <a class="row row-link" href="sound.html" data-i18n="soundPage">Adjust sounds …</a>
+      <!-- Resonance only -->
+      <div class="ex-group" data-exercise="resonance" hidden>
+        <label class="row">
+          <span data-i18n="pace">Pace</span>
+          <select id="setPace">
+            <option value="5000">5 s</option>
+            <option value="5500">5.5 s</option>
+            <option value="6000">6 s</option>
+          </select>
+        </label>
 
-    <h2 data-i18n="group_display">Display</h2>
+        <label class="row">
+          <span data-i18n="duration">Duration</span>
+          <select id="setDuration">
+            <option value="0">Unlimited</option>
+            <option value="3">3 min</option>
+            <option value="5">5 min</option>
+            <option value="10">10 min</option>
+          </select>
+        </label>
+      </div>
+    </div>
 
-    <label class="row switch-row">
-      <span data-i18n="color">Color change</span>
-      <input type="checkbox" id="setColor" class="switch">
-    </label>
+    <div class="tab-panel" id="panelGeneral" role="tabpanel" aria-labelledby="tabGeneral" hidden>
+      <label class="row">
+        <span data-i18n="language">Language</span>
+        <select id="setLang">
+          <option value="de">Deutsch</option>
+          <option value="en">English</option>
+        </select>
+      </label>
 
-    <label class="row">
-      <span data-i18n="holdStyle_label">Hold display</span>
-      <select id="setHoldStyle">
-        <option value="dot" data-i18n="opt_dot">Dot</option>
-        <option value="ring" data-i18n="opt_ring">Ring</option>
-        <option value="pulse" data-i18n="opt_pulse">Pulse</option>
-      </select>
-    </label>
+      <label class="row">
+        <span data-i18n="design">Theme</span>
+        <select id="setTheme">
+          <option value="system" data-i18n="opt_system">System</option>
+          <option value="light" data-i18n="opt_light">Light</option>
+          <option value="dark" data-i18n="opt_dark">Dark</option>
+        </select>
+      </label>
 
-    <label class="row switch-row">
-      <span data-i18n="phaseText">Phase label</span>
-      <input type="checkbox" id="setPhaseText" class="switch">
-    </label>
+      <label class="row switch-row">
+        <span data-i18n="sound">Sound</span>
+        <input type="checkbox" id="setSound" class="switch">
+      </label>
 
-    <label class="row switch-row">
-      <span data-i18n="counter">Cycle counter</span>
-      <input type="checkbox" id="setCounter" class="switch">
-    </label>
+      <a class="row row-link" href="sound.html" data-i18n="soundPage">Adjust sounds …</a>
 
-    <h2 data-i18n="group_session">Session</h2>
+      <label class="row switch-row">
+        <span data-i18n="color">Color change</span>
+        <input type="checkbox" id="setColor" class="switch">
+      </label>
 
-    <label class="row switch-row">
-      <span data-i18n="exhaleFirst">Exhale first</span>
-      <input type="checkbox" id="setExhaleFirst" class="switch">
-    </label>
+      <label class="row switch-row">
+        <span data-i18n="phaseText">Phase label</span>
+        <input type="checkbox" id="setPhaseText" class="switch">
+      </label>
 
-    <label class="row">
-      <span data-i18n="autostop">Auto-stop</span>
-      <select id="setAutoStop">
-        <option value="0">Unlimited</option>
-        <option value="2">2 rounds</option>
-        <option value="4">4 rounds</option>
-        <option value="8">8 rounds</option>
-      </select>
-    </label>
+      <label class="row switch-row">
+        <span data-i18n="counter">Counter</span>
+        <input type="checkbox" id="setCounter" class="switch">
+      </label>
+    </div>
   </div>
 
   <footer class="footer">
-    <a href="technique.html" data-i18n="about">The 478 technique</a>
+    <a href="technique.html" data-i18n="about">The exercises</a>
     <span aria-hidden="true">·</span>
     <a href="about.html" data-i18n="aboutProject">About</a>
     <span aria-hidden="true">·</span>

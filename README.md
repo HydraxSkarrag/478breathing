@@ -1,7 +1,8 @@
 # 478breathing
 
-A deliberately minimalist web page that guides the **4-7-8 breathing technique**:
-inhale for 4 seconds, hold for 7, exhale for 8.
+A deliberately minimalist web page that guides the **4-7-8 breathing technique**
+(inhale for 4 seconds, hold for 7, exhale for 8) and **resonance breathing** (inhale and
+exhale evenly at about 5.5 seconds each, as described in James Nestor's *Breath*).
 
 The UI is a single circle: tap to start the guided breathing, tap again (or the stop
 icon) to end it. The interface is bilingual (English by default, German switchable in the
@@ -20,8 +21,16 @@ settings); the legal pages (Impressum/Datenschutz) are German only.
   phase (e.g. gusty wind, rain, a warm pad, a deeper duller exhale, a temple bell, harp or
   wind chimes). Every breath sound is directional: it rises with the inhale and sinks with
   the exhale.
-- **Explainer page** ([`technique.html`](technique.html), bilingual DE/EN): what the 4-7-8
-  technique is, how to do it and what it can help with, linked from the footer.
+- **Two exercises**, switchable in the settings:
+  - **4-7-8** with an optional lead-in exhale and auto-stop counted in rounds.
+  - **Resonance breathing** with a selectable pace (5 / 5.5 / 6 s per breath, 5.5 by
+    default) and auto-stop counted in minutes; the counter shows the time left. A session
+    always ends after a complete breath.
+- **Settings in two tabs:** *Breathing* shows only the options of the chosen exercise
+  (e.g. the hold display only exists for 4-7-8), *General* holds language, theme, sound and
+  display options.
+- **Explainer page** ([`technique.html`](technique.html), bilingual DE/EN): how both
+  exercises work and what they can help with, linked from the footer.
 - **Follows Dr. Weil's instructions:** an optional lead-in exhale before the first round
   ("Exhale first", off by default) and auto-stop after **4 rounds** by default, his limit for
   the first month (8 at most later, so no larger option is offered).
@@ -100,14 +109,17 @@ The page ships with Open Graph / Twitter card tags and a share image
 ([`og-image.png`](og-image.png), 1200×630), so links unfurl nicely on social media.
 If you host it on a different domain, set the `SITE_URL` variable (see above) — the deploy
 workflow then rewrites the absolute URLs in the `og:*` / `twitter:*` meta tags for you. The
-domain text baked into the image is separate; regenerate `og-image.png` if you want it changed.
+domain text baked into the image is separate; regenerate `og-image.png` if you want it changed,
+and bump the `?v=` on its URL in `index.html` so messengers fetch the new image.
 
 Suggested captions:
 
-- **DE:** „4-7-8-Atmung zum Runterkommen: 4 Sekunden einatmen, 7 halten, 8 ausatmen. Ein
-  Kreis führt dich, ganz ohne Anmeldung und mit optionalem Ton. 🫁 https://478breathing.hydrax.org"
-- **EN:** "Calm down with 4-7-8 breathing: inhale 4s, hold 7s, exhale 8s. A single circle
-  guides you — no sign-up, optional sound. 🫁 https://478breathing.hydrax.org"
+- **DE:** „Zwei ruhige Atemübungen, geführt von einem Kreis: 4-7-8 zum Runterkommen und die
+  Resonanzatmung mit etwa 5,5 Atemzügen pro Minute. Ohne Anmeldung, mit optionalem Ton.
+  🫁 https://478breathing.hydrax.org"
+- **EN:** "Two calm breathing exercises, guided by a single circle: 4-7-8 to wind down and
+  resonance breathing at about 5.5 breaths a minute. No sign-up, optional sound.
+  🫁 https://478breathing.hydrax.org"
 
 ## License
 
