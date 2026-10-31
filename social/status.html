@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>478breathing · status video</title>
+<!--
+  Vertical status video (1080x1920) for WhatsApp/Instagram stories.
+  Everything is driven by renderAt(t), t in seconds (0..DURATION): no CSS
+  animations, so render.mjs can capture it frame by frame. renderAudio()
+  renders the soundtrack offline through the app's own audio.js.
+  Open it directly in a browser for a live preview (click to play).
+  ?lang=en switches the texts to English.
+-->
+<style>
+  /* hydrax.org's own wordmark font for the sign-off (SIL Open Font License) */
+  @font-face {
+    font-family: 'Press Start 2P'; font-style: normal; font-weight: 400;
+    src: url(fonts/press-start-2p-latin.woff2) format('woff2');
+  }
+  :root {
+    --bg: #0e1116; --fg: #e9ecef; --fg2: #c4ccd4; --muted: #7a8490; --idle: #2a323b;
+    --inhale: #7fb77e; --hold: #ecd68f; --hold-end: #f2994a; --exhale: #6fa8dc;
+  }
+  html, body {
+    margin: 0; width: 1080px; height: 1920px; overflow: hidden;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .abs { position: absolute; left: 0; right: 0; text-align: center; }
+
+  /* intro */
+  #intro { top: 300px; }
+  .kicker {
+    display: inline-block; padding: 10px 26px; border-radius: 40px;
+    border: 2px solid var(--inhale); color: var(--inhale);
+    font-size: 30px; font-weight: 600; letter-spacing: 0.18em;
+  }
+  #intro h1 { font-size: 92px; font-weight: 700; margin: 48px 0 0; letter-spacing: -0.01em; }
+  #intro p { font-size: 46px; color: var(--muted); margin: 24px 0 0; }
+
+  /* exercise headers */
+  .head { top: 230px; }
+  .head h2 { font-size: 120px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .head p { font-size: 42px; color: var(--muted); margin: 18px 0 0; }
+
+  /* circle */
+  #stage { position: absolute; left: 0; top: 420px; width: 1080px; height: 1080px; }
+  #phase {
+    position: absolute; left: 0; right: 0; top: 930px; text-align: center;
+    font-size: 46px; letter-spacing: 0.16em; text-transform: uppercase; color: #fff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  }
+
+  /* phase chips */
+  .chips { top: 1530px; display: flex; justify-content: center; gap: 22px; }
+  .chip {
+    padding: 18px 34px; border-radius: 50px; border: 3px solid var(--idle);
+    font-size: 38px; color: var(--muted); white-space: nowrap;
+  }
+  .chip b { color: var(--fg2); font-weight: 700; }
+
+  /* sound hint */
+  #sound { top: 1730px; display: flex; justify-content: center; align-items: center; gap: 18px;
+           font-size: 32px; color: var(--muted); }
+  /* a small switch like the app's: sound is optional */
+  .mini-switch { position: relative; width: 66px; height: 38px; border-radius: 19px; background: #2a323b; }
+  .mini-switch::after {
+    content: ""; position: absolute; top: 4px; left: 4px; width: 30px; height: 30px;
+    border-radius: 50%; background: #fff; transform: translateX(var(--knob, 0px));
+  }
+
+  /* outro */
+  #outro { top: 0; bottom: 0; }
+  #url { top: 262px; font-size: 72px; font-weight: 700; letter-spacing: -0.01em; color: var(--fg); }
+  #tagline { top: 378px; font-size: 42px; color: var(--muted); }
+  #outroIcons { position: absolute; left: 0; top: 610px; width: 1080px; height: 420px; }
+  .oname { position: absolute; top: 1070px; width: 540px; font-size: 64px; font-weight: 700; }
+  .orhythm { position: absolute; top: 1160px; width: 540px; font-size: 38px; color: var(--muted); }
+
+  /* hydrax.org sign-off, Tron style: a neon frame traces itself, then the text glows up */
+  #hx { top: 1440px; height: 190px; }
+  #hxFrame {
+    position: absolute; left: 230px; top: 0; width: 620px; height: 190px; overflow: visible;
+    filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.7)) drop-shadow(0 0 18px rgba(0, 212, 255, 0.35));
+  }
+  /* like the "$ ..." prompt on hydrax.org, and the blinking underscore after the
+     name that is the wordmark everywhere (HYDRAX_, Mein Regal_) */
+  .hx-small {
+    position: absolute; left: 0; right: 0; top: 46px; font-family: 'Press Start 2P', monospace;
+    font-size: 20px; line-height: 1; color: #5285a5;
+  }
+  .hx-small b { font-weight: 400; color: #1a75ff; }
+  .hx-big {
+    position: absolute; left: 0; right: 0; top: 96px; font-family: 'Press Start 2P', monospace;
+    font-size: 46px; line-height: 1; color: #00d4ff;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.65), 0 0 28px rgba(0, 212, 255, 0.3);
+  }
+  .hx-cursor { color: #00d4ff; }
+  #play { position: fixed; inset: 0; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div id="intro" class="abs">
+    <span class="kicker" data-t="kicker"></span>
+    <h1 data-t="title"></h1>
+    <p data-t="subtitle"></p>
+  </div>
+
+  <div id="head478" class="abs head"><h2>4-7-8</h2><p data-t="sub478"></p></div>
+  <div id="headRes" class="abs head"><h2 data-t="res"></h2><p data-t="subRes"></p></div>
+
+  <svg id="stage" viewBox="0 0 200 200">
+    <circle id="ring2" cx="100" cy="100" r="72" fill="none" stroke="#7fb77e" stroke-width="0.9"></circle>
+    <circle id="ring1" cx="100" cy="100" r="72" fill="none" stroke="#7fb77e" stroke-width="0.9"></circle>
+    <circle id="fill" cx="100" cy="100" r="72"></circle>
+    <circle id="dot" cx="100" cy="100" r="72" fill="#f2994a"></circle>
+  </svg>
+  <div id="phase"></div>
+
+  <div id="chips478" class="abs chips">
+    <span class="chip" data-phase="inhale"><b>4 s</b> <span data-t="in"></span></span>
+    <span class="chip" data-phase="hold"><b>7 s</b> <span data-t="hold"></span></span>
+    <span class="chip" data-phase="exhale"><b>8 s</b> <span data-t="out"></span></span>
+  </div>
+  <div id="chipsRes" class="abs chips">
+    <span class="chip" data-phase="inhale"><b data-t="pace"></b> <span data-t="in"></span></span>
+    <span class="chip" data-phase="exhale"><b data-t="pace"></b> <span data-t="out"></span></span>
+  </div>
+
+  <div id="sound" class="abs">
+    <span class="mini-switch" id="soundSwitch"></span>
+    <span data-t="sound"></span>
+  </div>
+
+  <div id="outro" class="abs">
+    <svg id="outroIcons" viewBox="0 0 1080 420">
+      <circle cx="270" cy="210" r="170" fill="#ecd68f"></circle>
+      <circle cx="270" cy="210" r="118" fill="#f2994a"></circle>
+      <circle cx="810" cy="210" r="170" fill="none" stroke="rgba(127,183,126,0.22)" stroke-width="4"></circle>
+      <circle cx="810" cy="210" r="144" fill="none" stroke="rgba(127,183,126,0.45)" stroke-width="4"></circle>
+      <circle cx="810" cy="210" r="118" fill="#7fb77e"></circle>
+    </svg>
+    <div class="oname" style="left:0">4-7-8</div>
+    <div class="oname" style="left:540px" data-t="res"></div>
+    <div class="orhythm" style="left:0">4 · 7 · 8</div>
+    <div class="orhythm" style="left:540px" data-t="resRhythm"></div>
+    <div id="url" class="abs">478breathing.hydrax.org</div>
+    <div id="tagline" class="abs" data-t="tagline"></div>
+  </div>
+
+  <div id="hx" class="abs">
+    <svg id="hxFrame" viewBox="0 0 620 190">
+      <!-- corner brackets plus a thin full frame that traces itself in -->
+      <path id="hxTrace" d="M310 2 H612 Q618 2 618 8 V182 Q618 188 612 188 H8 Q2 188 2 182 V8 Q2 2 8 2 Z"
+            fill="none" stroke="#00d4ff" stroke-width="2" pathLength="1" stroke-dasharray="1 1"></path>
+    </svg>
+    <div class="hx-small"><b>$</b> <span data-t="hxSmall"></span></div>
+    <div class="hx-big">hydrax.org<span class="hx-cursor" id="hxCursor">_</span></div>
+  </div>
+
+  <div id="play"></div>
+
+<script src="../audio.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var params = new URLSearchParams(location.search);
+  var LANG = params.get("lang") === "en" ? "en" : "de";
+  var TEXT = {
+    de: {
+      kicker: "NEU", title: "Kurz durchatmen?", subtitle: "Zwei Atemübungen. Ein Kreis.",
+      sub478: "zum Runterkommen und Einschlafen",
+      res: "Resonanz", subRes: "gleichmäßig, rund 5,5 Atemzüge pro Minute",
+      in: "ein", hold: "halten", out: "aus", pace: "5,5 s",
+      phaseIn: "Einatmen", phaseHold: "Halten", phaseOut: "Ausatmen",
+      sound: "Klänge an oder aus, frei wählbar", resRhythm: "5,5 · 5,5", hxSmall: "gebaut von",
+      tagline: "Kostenlos · ohne Anmeldung · ohne Tracking"
+    },
+    en: {
+      kicker: "NEW", title: "Take a breath?", subtitle: "Two breathing exercises. One circle.",
+      sub478: "to wind down and fall asleep",
+      res: "Resonance", subRes: "even, about 5.5 breaths a minute",
+      in: "in", hold: "hold", out: "out", pace: "5.5 s",
+      phaseIn: "Inhale", phaseHold: "Hold", phaseOut: "Exhale",
+      sound: "Sound on or off, pick your own", resRhythm: "5.5 · 5.5", hxSmall: "made by",
+      tagline: "Free · no sign-up · no tracking"
+    }
+  }[LANG];
+  document.documentElement.lang = LANG;
+  [].forEach.call(document.querySelectorAll("[data-t]"), function (el) {
+    el.textContent = TEXT[el.getAttribute("data-t")];
+  });
+
+  /* ---------- timeline (seconds) ---------- */
+  var DURATION = 43; // keep in sync with render.mjs
+  var R478 = 3.5;    // 4-7-8 round: inhale 4, hold 7, exhale 8 -> ends 22.5
+  var RES = 24.0;    // one resonance breath: 5.5 in, 5.5 out -> ends 35.0
+  var PACE = 5.5;
+  var OUTRO = 35.3;
+  var HX = 37.6;     // hydrax.org sign-off
+  var PHASES = [
+    { ex: "478", name: "inhale", start: R478,      dur: 4 },
+    { ex: "478", name: "hold",   start: R478 + 4,  dur: 7 },
+    { ex: "478", name: "exhale", start: R478 + 11, dur: 8 },
+    { ex: "res", name: "inhale", start: RES,        dur: PACE },
+    { ex: "res", name: "exhale", start: RES + PACE, dur: PACE }
+  ];
+
+  var MIN = 0.35, MAX = 1;
+  var C = { idle: "#2a323b", inhale: "#7fb77e", hold: "#ecd68f", exhale: "#6fa8dc" };
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function ease(p) { return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; }
+  // opacity for an element visible from a to b with fade length f
+  function vis(t, a, b, f) { return clamp(Math.min((t - a) / f, (b - t) / f), 0, 1); }
+  function hex(c) { return [1, 3, 5].map(function (i) { return parseInt(c.substr(i, 2), 16); }); }
+  function mix(a, b, p) {
+    var x = hex(a), y = hex(b);
+    return "rgb(" + x.map(function (v, i) { return Math.round(v + (y[i] - v) * p); }).join(",") + ")";
+  }
+  function phaseAt(t) {
+    for (var i = 0; i < PHASES.length; i++) {
+      var ph = PHASES[i];
+      if (t >= ph.start && t < ph.start + ph.dur) return { ph: ph, p: (t - ph.start) / ph.dur, idx: i };
+    }
+    return null;
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var fill = $("fill"), dot = $("dot"), ring1 = $("ring1"), ring2 = $("ring2");
+
+  function setScale(el, s) { el.setAttribute("r", (72 * s).toFixed(3)); }
+
+  function renderAt(t) {
+    // intro
+    var intro = vis(t, 0.2, 3.0, 0.5);
+    $("intro").style.opacity = intro;
+    $("intro").style.transform = "translateY(" + ((1 - Math.min(1, (t - 0.2) / 0.6)) * 30).toFixed(1) + "px)";
+
+    // headers and chips
+    $("head478").style.opacity = vis(t, 3.0, 23.0, 0.5);
+    $("chips478").style.opacity = vis(t, 3.0, 23.0, 0.5);
+    $("headRes").style.opacity = vis(t, 23.3, 35.3, 0.5);
+    $("chipsRes").style.opacity = vis(t, 23.3, 35.3, 0.5);
+    $("sound").style.opacity = vis(t, 3.0, 35.3, 0.6);
+
+    // circle
+    var cur = phaseAt(t);
+    var scale = MIN, color = C.idle, dotScale = 0, phaseText = "", phaseOp = 0;
+    if (cur) {
+      var name = cur.ph.name, p = cur.p;
+      if (name === "inhale") scale = MIN + (MAX - MIN) * ease(p);
+      else if (name === "hold") scale = MAX;
+      else scale = MAX - (MAX - MIN) * ease(p);
+      // color glides from the previous phase within 0.5 s (as the app's CSS transition)
+      var prev = cur.idx > 0 && PHASES[cur.idx - 1].start + PHASES[cur.idx - 1].dur === cur.ph.start
+        ? C[PHASES[cur.idx - 1].name] : C.idle;
+      color = mix(prev, C[name], clamp((t - cur.ph.start) / 0.5, 0, 1));
+      if (name === "hold") dotScale = p;
+      phaseText = name === "inhale" ? TEXT.phaseIn : name === "hold" ? TEXT.phaseHold : TEXT.phaseOut;
+      phaseOp = vis(t, cur.ph.start, cur.ph.start + cur.ph.dur, 0.3) * 0.9;
+    } else if (t >= R478 + 19 && t < RES) {
+      color = mix(C.exhale, C.idle, clamp((t - (R478 + 19)) / 0.5, 0, 1));
+    } else {
+      color = C.idle;
+    }
+    var circleOp = Math.min(clamp((t - 0.6) / 0.8, 0, 1), clamp((OUTRO + 0.6 - t) / 0.6, 0, 1));
+    setScale(fill, scale);
+    fill.setAttribute("fill", color);
+    fill.style.opacity = circleOp;
+    setScale(dot, dotScale);
+    dot.style.opacity = cur && cur.ph.name === "hold" ? circleOp : 0;
+
+    // resonance: two faint rings breathing with the circle
+    var ringOp = vis(t, 23.3, 35.3, 0.6) * circleOp;
+    setScale(ring1, scale * 1.12); setScale(ring2, scale * 1.24);
+    ring1.style.opacity = (0.45 * ringOp).toFixed(3);
+    ring2.style.opacity = (0.22 * ringOp).toFixed(3);
+
+    $("phase").textContent = phaseText;
+    $("phase").style.opacity = phaseOp;
+
+    // active chip
+    [["chips478", "478"], ["chipsRes", "res"]].forEach(function (pair) {
+      [].forEach.call($(pair[0]).children, function (chip) {
+        var on = cur && cur.ph.ex === pair[1] && cur.ph.name === chip.getAttribute("data-phase");
+        var c = on ? C[cur.ph.name] : null;
+        chip.style.borderColor = on ? c : C.idle;
+        chip.style.color = on ? "#e9ecef" : "#7a8490";
+        chip.style.background = on ? "rgba(" + hex(c).join(",") + ",0.16)" : "transparent";
+      });
+    });
+
+    // sound switch flips on just before the first sound: optional, here switched on
+    var on = ease(clamp((t - 3.1) / 0.3, 0, 1));
+    $("soundSwitch").style.setProperty("--knob", (28 * on).toFixed(2) + "px");
+    $("soundSwitch").style.background = mix(C.idle, C.inhale, on);
+
+    // outro
+    var o = clamp((t - OUTRO - 0.4) / 0.8, 0, 1);
+    $("outro").style.opacity = o;
+    $("outroIcons").style.transform = "scale(" + (0.92 + 0.08 * ease(o)).toFixed(4) + ")";
+    $("outroIcons").style.transformOrigin = "540px 210px";
+
+    // hydrax.org sign-off: the frame traces in like a light trail, then the text glows up
+    var trace = ease(clamp((t - HX) / 1.0, 0, 1));
+    $("hxTrace").setAttribute("stroke-dashoffset", (1 - trace).toFixed(4));
+    $("hx").style.opacity = t >= HX ? 1 : 0;
+    var glow = clamp((t - HX - 0.6) / 0.7, 0, 1);
+    $("hx").querySelector(".hx-small").style.opacity = glow;
+    $("hx").querySelector(".hx-big").style.opacity = glow;
+    // the underscore blinks like the wordmark's caret: on, then off, every 1.1 s
+    var since = t - HX - 0.6;
+    $("hxCursor").style.visibility = since >= 0 && (since % 1.1) < 0.55 ? "visible" : "hidden";
+  }
+  window.renderAt = renderAt;
+  window.DURATION = DURATION;
+
+  /* ---------- soundtrack ---------- */
+  var CUES = [
+    { at: R478,      play: function (A) { A.inhale("ocean", 4000); } },
+    // the "deep" exhale is about 6 dB louder than the inhale (its low drone), so it
+    // is turned down to sit level with the rest
+    { at: R478 + 11, dur: 8, gain: 0.5, play: function (A) { A.exhale("deep", 8000); } },
+    { at: RES,        play: function (A) { A.inhale("ocean", PACE * 1000); } },
+    { at: RES + PACE, dur: PACE, gain: 0.5, play: function (A) { A.exhale("deep", PACE * 1000); } },
+    { at: OUTRO,      play: function (A) { A.end("gong"); } }
+  ];
+
+  // Renders the soundtrack offline through audio.js: AudioContext is replaced by
+  // a proxy around an OfflineAudioContext whose currentTime we move to each cue.
+  // Returns a 16-bit stereo WAV as base64, peak-normalized to -13 dBFS: the sounds
+  // are a calm background, not the point of a status video watched at full volume.
+  window.renderAudio = function () {
+    var SR = 44100;
+    var off = new OfflineAudioContext(2, SR * DURATION, SR);
+    var now = 0;
+    var proxy = new Proxy(off, {
+      get: function (target, prop) {
+        if (prop === "currentTime") return now;
+        if (prop === "state") return "running";
+        if (prop === "resume") return function () { return Promise.resolve(); };
+        var v = target[prop];
+        return typeof v === "function" ? v.bind(target) : v;
+      }
+    });
+    window.AudioContext = function () { return proxy; };
+    CUES.forEach(function (c) { now = c.at; c.play(window.BreathAudio); });
+    return off.startRendering().then(function (buf) {
+      var L = buf.getChannelData(0), R = buf.getChannelData(1), peak = 0, i;
+      // per-cue level (no other sound overlaps these windows)
+      CUES.forEach(function (c) {
+        if (!c.gain) return;
+        var from = Math.floor(c.at * SR), to = Math.min(L.length, Math.ceil((c.at + c.dur + 0.1) * SR));
+        for (var k = from; k < to; k++) { L[k] *= c.gain; R[k] *= c.gain; }
+      });
+      for (i = 0; i < L.length; i++) peak = Math.max(peak, Math.abs(L[i]), Math.abs(R[i]));
+      var gain = peak > 0 ? 0.224 / peak : 1;
+      var n = L.length, bytes = new Uint8Array(44 + n * 4), dv = new DataView(bytes.buffer);
+      function str(o, s) { for (var k = 0; k < s.length; k++) bytes[o + k] = s.charCodeAt(k); }
+      str(0, "RIFF"); dv.setUint32(4, 36 + n * 4, true); str(8, "WAVEfmt ");
+      dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 2, true);
+      dv.setUint32(24, SR, true); dv.setUint32(28, SR * 4, true); dv.setUint16(32, 4, true);
+      dv.setUint16(34, 16, true); str(36, "data"); dv.setUint32(40, n * 4, true);
+      for (i = 0; i < n; i++) {
+        dv.setInt16(44 + i * 4, clamp(L[i] * gain, -1, 1) * 32767, true);
+        dv.setInt16(46 + i * 4, clamp(R[i] * gain, -1, 1) * 32767, true);
+      }
+      var bin = "";
+      for (i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      return btoa(bin);
+    });
+  };
+
+  /* ---------- live preview (not used by the renderer) ---------- */
+  renderAt(params.has("t") ? parseFloat(params.get("t")) : 0);
+  if (params.get("render") === "1") {
+    $("play").remove();
+  } else {
+    $("play").addEventListener("click", function () {
+      $("play").remove();
+      var A = window.BreathAudio; A.resume();
+      var t0 = performance.now();
+      CUES.forEach(function (c) { setTimeout(function () { c.play(A); }, c.at * 1000); });
+      (function frame() {
+        var t = (performance.now() - t0) / 1000;
+        renderAt(Math.min(t, DURATION));
+        if (t < DURATION) requestAnimationFrame(frame);
+      })();
+    });
+  }
+  document.fonts.ready.then(function () { renderAt(params.has("t") ? parseFloat(params.get("t")) : 0); document.body.dataset.ready = "1"; });
+})();
+</script>
+</body>
+</html>

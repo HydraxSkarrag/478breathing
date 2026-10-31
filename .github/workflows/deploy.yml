@@ -87,6 +87,7 @@ jobs:
           EXCLUDES="--exclude '(^|/)\.git' \
             --exclude '(^|/)\.github/' \
             --exclude '(^|/)\.claude/' \
+            --exclude '(^|/)social/' \
             --exclude '(^|/)\.gitignore\$' \
             --exclude '\.md\$' \
             --exclude '(^|/)LICENSE\$' \
