@@ -47,7 +47,7 @@
       pace: "Tempo", duration: "Dauer", minutes: "Min.",
       language: "Sprache", design: "Design",
       opt_system: "System", opt_light: "Hell", opt_dark: "Dunkel",
-      sound: "Ton", soundPage: "Klänge anpassen …", color: "Farbwechsel",
+      sound: "Klänge", soundPage: "Klänge anpassen …", color: "Farbwechsel",
       holdStyle_label: "Halten-Anzeige", opt_dot: "Punkt", opt_ring: "Ring", opt_pulse: "Pulsieren",
       phaseText: "Phasen-Text",
       counter: "Zähler", exhaleFirst: "Zuerst ausatmen", autostop: "Auto-Stopp",

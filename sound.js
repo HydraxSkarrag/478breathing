@@ -37,10 +37,10 @@
       ? "Wähle für jede Phase einen Klang. Mit ▶ hörst du ihn probeweise an. Alle Klänge werden direkt im Browser synthetisiert, ganz ohne Audiodateien."
       : "Pick a sound for each phase. Use ▶ to preview it. All sounds are synthesized right in the browser – no audio files.",
     test:  de ? "Anhören" : "Preview",
-    masterName: de ? "Ton in der Übung" : "Sound during the exercise",
-    masterOn:   de ? "Ist eingeschaltet, die Klänge sind währenddessen zu hören."
+    masterName: de ? "Klänge in der Übung" : "Sound during the exercise",
+    masterOn:   de ? "Sind eingeschaltet, du hörst sie während der Übung."
                    : "Switched on, so you hear these sounds while breathing.",
-    masterOff:  de ? "Ist ausgeschaltet. Die Vorschau funktioniert trotzdem."
+    masterOff:  de ? "Sind ausgeschaltet. Die Vorschau funktioniert trotzdem."
                    : "Switched off. Previews still work here."
   };
 
