@@ -40,6 +40,9 @@
     <!-- The circle itself is the start/stop button -->
     <button class="breath" id="breathBtn" type="button" aria-label="Start breathing">
       <svg class="breath-svg" viewBox="0 0 200 200" aria-hidden="true">
+        <!-- Resonance only: two faint rings that breathe with the circle -->
+        <circle class="res-ring" id="resRing2" cx="100" cy="100" r="80"></circle>
+        <circle class="res-ring" id="resRing1" cx="100" cy="100" r="80"></circle>
         <circle class="fill" id="fill" cx="100" cy="100" r="80"></circle>
         <!-- Hold indicator, "dot" style: an orange dot growing from the center until it fills the circle -->
         <circle class="hold-dot" id="holdDot" cx="100" cy="100" r="80"></circle>

@@ -139,6 +139,21 @@ body {
   transition: fill 0.5s ease;
 }
 
+/* Resonance rings: scaled per frame in JS around the circle (1.12x and 1.24x
+   its size, so at full size they end just inside the button). The stroke keeps
+   its width while scaling, so the rings stay fine lines on every screen. */
+.res-ring {
+  fill: none;
+  stroke: var(--c-inhale);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
 /* Gentle glide back to idle when stopping */
 .breath.smooth .fill { transition: transform 0.8s ease, fill 0.8s ease; }
 

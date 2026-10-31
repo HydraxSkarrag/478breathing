@@ -24,7 +24,8 @@ settings); the legal pages (Impressum/Datenschutz) are German only.
 - **Two exercises**, switchable in the settings:
   - **4-7-8** with an optional lead-in exhale and auto-stop counted in rounds.
   - **Resonance breathing** with a selectable pace (5 / 5.5 / 6 s per breath, 5.5 by
-    default) and auto-stop counted in minutes; the counter shows the time left. A session
+    default) and auto-stop counted in minutes; the counter shows the time left. Two faint
+    rings breathe along with the circle. A session
     always ends after a complete breath.
 - **Settings in two tabs:** *Breathing* shows only the options of the chosen exercise
   (e.g. the hold display only exists for 4-7-8), *General* holds language, theme, sound and
@@ -59,6 +60,7 @@ Plain HTML/CSS/JS — no dependencies, no build step.
 | `technique.html`, `about.html` | Bilingual content pages (DE/EN)                            |
 | `impressum.html`, `datenschutz.html` | Legal pages (German only)                            |
 | `sw.js`, `site.webmanifest` | Offline support and home-screen install                       |
+| `social/`             | Status video for WhatsApp/Instagram (not deployed), see [`social/README.md`](social/README.md) |
 
 There are no inline scripts or styles anywhere, which keeps the Content-Security-Policy in
 [`.htaccess`](.htaccess) strict (`script-src 'self'; style-src 'self'`).

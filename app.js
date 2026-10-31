@@ -160,6 +160,9 @@
   var fill = document.getElementById("fill");
   var ring = document.getElementById("ring");
   var holdDot = document.getElementById("holdDot");
+  var resRing1 = document.getElementById("resRing1");
+  var resRing2 = document.getElementById("resRing2");
+  var RES_RINGS = [[resRing1, 1.12, "0.45"], [resRing2, 1.24, "0.22"]]; // ring, size, opacity
   var phaseTextEl = document.getElementById("phaseText");
   var counterEl = document.getElementById("counter");
   var settingsToggle = document.getElementById("settingsToggle");
@@ -277,6 +280,8 @@
     fill.style.opacity = "1"; // reset any pulse dimming
     ring.style.opacity = "0";
     holdDot.style.opacity = "0";
+    resRing1.style.opacity = "0";
+    resRing2.style.opacity = "0";
     phaseTextEl.textContent = "";
     counterText = "";
   }
@@ -405,6 +410,16 @@
     fill.style.transform = "scale(" + scale.toFixed(4) + ")";
     fill.style.fill = fillColor;
     fill.style.opacity = fillOpacity.toFixed(3);
+
+    // resonance: the rings breathe with the circle (green, also while exhaling)
+    var rings = settings.exercise === "resonance";
+    for (var i = 0; i < RES_RINGS.length; i++) {
+      var r = RES_RINGS[i];
+      r[0].style.opacity = rings ? r[2] : "0";
+      if (!rings) continue;
+      r[0].style.transform = "scale(" + (scale * r[1]).toFixed(4) + ")";
+      r[0].style.stroke = useColor ? colors.inhale : colors.accent;
+    }
   }
 
   // Called every frame, so the text is only written when it actually changes.
